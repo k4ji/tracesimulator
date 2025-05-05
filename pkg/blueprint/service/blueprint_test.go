@@ -21,7 +21,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "task-a1",
 						ExternalID: func() *task.ExternalID { id, _ := task.NewExternalID("task-a1"); return id }(),
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 						Duration:   time.Duration(1000) * time.Millisecond,
 						Kind:       "server",
 						Attributes: map[string]string{
@@ -31,7 +31,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 							{
 								Name:       "task-a1-child",
 								ExternalID: func() *task.ExternalID { id, _ := task.NewExternalID("task-a1-child"); return id }(),
-								Delay:      NewAbsoluteDurationIgnoringError(time.Duration(500) * time.Millisecond),
+								Delay:      NewAbsoluteDurationDelay(time.Duration(500) * time.Millisecond),
 								Duration:   time.Duration(500) * time.Millisecond,
 								Kind:       "producer",
 								Attributes: map[string]string{
@@ -44,7 +44,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:     "task-a2",
 						Kind:     "internal",
-						Delay:    NewAbsoluteDurationIgnoringError(0),
+						Delay:    NewAbsoluteDurationDelay(0),
 						Duration: time.Duration(100) * time.Millisecond,
 					},
 				},
@@ -54,7 +54,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 				Tasks: []model.Task{
 					{Name: "task-b1",
 						Kind:     "internal",
-						Delay:    NewAbsoluteDurationIgnoringError(0),
+						Delay:    NewAbsoluteDurationDelay(0),
 						Duration: time.Duration(2000) * time.Millisecond,
 					},
 				},
@@ -73,7 +73,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, "test", rootTaskNodes[0].Definition().Resource().Attributes()["env"])
 		assert.Equal(t, task.KindServer, rootTaskNodes[0].Definition().Kind())
 		assert.Equal(t, map[string]string{"key1": "value1"}, rootTaskNodes[0].Definition().Attributes())
-		assert.Equal(t, NewAbsoluteDurationIgnoringError(0), rootTaskNodes[0].Definition().Delay())
+		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[0].Definition().Delay())
 		assert.Equal(t, time.Duration(1000)*time.Millisecond, rootTaskNodes[0].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[0].Definition().FailWithProbability())
 
@@ -82,7 +82,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, "test", rootTaskNodes[0].Children()[0].Definition().Resource().Attributes()["env"])
 		assert.Equal(t, task.KindProducer, rootTaskNodes[0].Children()[0].Definition().Kind())
 		assert.Equal(t, map[string]string{"key2": "value2"}, rootTaskNodes[0].Children()[0].Definition().Attributes())
-		assert.Equal(t, NewAbsoluteDurationIgnoringError(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Delay())
+		assert.Equal(t, NewAbsoluteDurationDelay(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Delay())
 		assert.Equal(t, time.Duration(500)*time.Millisecond, rootTaskNodes[0].Children()[0].Definition().Duration())
 		assert.Equal(t, 0.1, rootTaskNodes[0].Children()[0].Definition().FailWithProbability())
 
@@ -90,14 +90,14 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, "service-a", rootTaskNodes[1].Definition().Resource().Name())
 		assert.Equal(t, "test", rootTaskNodes[1].Definition().Resource().Attributes()["env"])
 		assert.Equal(t, task.KindInternal, rootTaskNodes[1].Definition().Kind())
-		assert.Equal(t, NewAbsoluteDurationIgnoringError(0), rootTaskNodes[1].Definition().Delay())
+		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[1].Definition().Delay())
 		assert.Equal(t, time.Duration(100)*time.Millisecond, rootTaskNodes[1].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[1].Definition().FailWithProbability())
 
 		assert.Equal(t, "task-b1", rootTaskNodes[2].Definition().Name())
 		assert.Equal(t, "service-b", rootTaskNodes[2].Definition().Resource().Name())
 		assert.Equal(t, task.KindInternal, rootTaskNodes[2].Definition().Kind())
-		assert.Equal(t, NewAbsoluteDurationIgnoringError(0), rootTaskNodes[2].Definition().Delay())
+		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[2].Definition().Delay())
 		assert.Equal(t, time.Duration(2000)*time.Millisecond, rootTaskNodes[2].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[2].Definition().FailWithProbability())
 	})
@@ -111,7 +111,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "parent-task",
 						ExternalID: parentID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -120,7 +120,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 				Tasks: []model.Task{
 					{
 						Name:    "child-task",
-						Delay:   NewAbsoluteDurationIgnoringError(0),
+						Delay:   NewAbsoluteDurationDelay(0),
 						ChildOf: parentID,
 					},
 				},
@@ -146,12 +146,12 @@ func TestBlueprint_Interpret(t *testing.T) {
 					Tasks: []model.Task{
 						{
 							Name:  "parent-task",
-							Delay: NewAbsoluteDurationIgnoringError(0),
+							Delay: NewAbsoluteDurationDelay(0),
 							Children: []model.Task{
 								{
 									Name:       "child-task",
 									ExternalID: parentID,
-									Delay:      NewAbsoluteDurationIgnoringError(0),
+									Delay:      NewAbsoluteDurationDelay(0),
 								},
 							},
 						},
@@ -162,7 +162,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					Tasks: []model.Task{
 						{
 							Name:    "child-task",
-							Delay:   NewAbsoluteDurationIgnoringError(0),
+							Delay:   NewAbsoluteDurationDelay(0),
 							ChildOf: parentID,
 						},
 					},
@@ -191,7 +191,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "task-a",
 						ExternalID: taskAID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -201,7 +201,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "task-b",
 						ExternalID: taskBID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 						LinkedTo:   []*task.ExternalID{taskAID},
 					},
 				},
@@ -234,7 +234,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:    "child-task",
 						ChildOf: parentID,
-						Delay:   NewAbsoluteDurationIgnoringError(0),
+						Delay:   NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -257,7 +257,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "task-a1",
 						ExternalID: externalID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -267,7 +267,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{
 						Name:       "task-b1",
 						ExternalID: externalID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -292,7 +292,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 						Name:       "task-a",
 						ExternalID: taskAID,
 						ChildOf:    taskBID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -303,7 +303,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 						Name:       "task-b",
 						ExternalID: taskBID,
 						ChildOf:    taskAID,
-						Delay:      NewAbsoluteDurationIgnoringError(0),
+						Delay:      NewAbsoluteDurationDelay(0),
 					},
 				},
 			},
@@ -317,7 +317,8 @@ func TestBlueprint_Interpret(t *testing.T) {
 	})
 }
 
-func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.Expression {
-	d, _ := taskduration.NewAbsoluteDuration(duration)
-	return d
+func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDelay(e)
+	return *d
 }

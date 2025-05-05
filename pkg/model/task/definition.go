@@ -1,8 +1,6 @@
 package task
 
 import (
-	"fmt"
-	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"time"
 )
 
@@ -14,18 +12,15 @@ type Definition struct {
 	attributes           map[string]string
 	kind                 Kind
 	externalID           *ExternalID
-	delay                taskduration.Expression // Relative time from the start of the parent task
-	duration             time.Duration           // Relative time from the start of the parent task
-	childOf              *ExternalID             // ID of the parent task (if any)
-	linkedTo             []*ExternalID           // IDs of linked spans (for producer/consumer relationships)
-	failWithProbability  float64                 // Probability of error
+	delay                Delay         // Relative time from the start of the parent task
+	duration             time.Duration // Relative time from the start of the parent task
+	childOf              *ExternalID   // ID of the parent task (if any)
+	linkedTo             []*ExternalID // IDs of linked spans (for producer/consumer relationships)
+	failWithProbability  float64       // Probability of error
 }
 
 // NewDefinition creates a new task definition
-func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay taskduration.Expression, duration time.Duration, childOf *ExternalID, linkedTo []*ExternalID, failWithProbability float64) (*Definition, error) {
-	if delay == nil {
-		return nil, fmt.Errorf("delay cannot be nil")
-	}
+func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration time.Duration, childOf *ExternalID, linkedTo []*ExternalID, failWithProbability float64) (*Definition, error) {
 	return &Definition{
 		name:                 name,
 		isResourceEntryPoint: isResourceEntryPoint,
@@ -65,7 +60,7 @@ func (d *Definition) ExternalID() *ExternalID {
 	return d.externalID
 }
 
-func (d *Definition) Delay() taskduration.Expression {
+func (d *Definition) Delay() Delay {
 	return d.delay
 }
 

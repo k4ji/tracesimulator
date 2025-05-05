@@ -35,7 +35,7 @@ func TestFromTaskTree(t *testing.T) {
 						map[string]string{"team": "team-a"},
 						task.KindServer,
 						func() *task.ExternalID { id, _ := task.NewExternalID("root-task"); return id }(),
-						NewAbsoluteDurationIgnoringError(1*time.Second),
+						NewAbsoluteDurationDelay(1*time.Second),
 						2*time.Second,
 						nil,
 						[]*task.ExternalID{},
@@ -78,7 +78,7 @@ func TestFromTaskTree(t *testing.T) {
 							map[string]string{"key1": "val1"},
 							task.KindInternal,
 							nil,
-							NewAbsoluteDurationIgnoringError(1*time.Second),
+							NewAbsoluteDurationDelay(1*time.Second),
 							2*time.Second,
 							nil,
 							[]*task.ExternalID{},
@@ -98,7 +98,7 @@ func TestFromTaskTree(t *testing.T) {
 								map[string]string{"key2": "val2"},
 								task.KindClient,
 								nil,
-								NewAbsoluteDurationIgnoringError(3*time.Second),
+								NewAbsoluteDurationDelay(3*time.Second),
 								4*time.Second,
 								nil,
 								[]*task.ExternalID{},
@@ -171,7 +171,7 @@ func TestFromTaskTree(t *testing.T) {
 							make(map[string]string),
 							task.KindInternal,
 							nil,
-							NewAbsoluteDurationIgnoringError(1*time.Second),
+							NewAbsoluteDurationDelay(1*time.Second),
 							2*time.Second,
 							nil,
 							[]*task.ExternalID{},
@@ -191,7 +191,7 @@ func TestFromTaskTree(t *testing.T) {
 								make(map[string]string),
 								task.KindClient,
 								nil,
-								NewAbsoluteDurationIgnoringError(3*time.Second),
+								NewAbsoluteDurationDelay(3*time.Second),
 								4*time.Second,
 								nil,
 								[]*task.ExternalID{},
@@ -264,7 +264,7 @@ func TestFromTaskTree(t *testing.T) {
 							make(map[string]string),
 							task.KindInternal,
 							nil,
-							NewAbsoluteDurationIgnoringError(0),
+							NewAbsoluteDurationDelay(0),
 							10*time.Second,
 							nil,
 							[]*task.ExternalID{},
@@ -284,7 +284,7 @@ func TestFromTaskTree(t *testing.T) {
 								make(map[string]string),
 								task.KindClient,
 								nil,
-								NewRelativeDurationIgnoringError(0.5),
+								NewRelativeDurationDelay(0.5),
 								20*time.Second,
 								nil,
 								[]*task.ExternalID{},
@@ -356,7 +356,7 @@ func TestFromTaskTree(t *testing.T) {
 						make(map[string]string),
 						task.KindInternal,
 						nil,
-						NewAbsoluteDurationIgnoringError(1*time.Second),
+						NewAbsoluteDurationDelay(1*time.Second),
 						2*time.Second,
 						nil,
 						[]*task.ExternalID{},
@@ -420,7 +420,7 @@ func TestFromTaskTreeError(t *testing.T) {
 						make(map[string]string),
 						task.KindInternal,
 						nil,
-						NewRelativeDurationIgnoringError(0.5),
+						NewRelativeDurationDelay(0.5),
 						2*time.Second,
 						nil,
 						[]*task.ExternalID{},
@@ -467,12 +467,14 @@ func TestShiftTimestamps(t *testing.T) {
 	assert.Equal(t, childNodeEndTime.Add(delta), node.children[0].endTime)
 }
 
-func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.AbsoluteDuration {
-	d, _ := taskduration.NewAbsoluteDuration(duration)
+func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDelay(e)
 	return *d
 }
 
-func NewRelativeDurationIgnoringError(v float64) taskduration.RelativeDuration {
-	d, _ := taskduration.NewRelativeDuration(v)
+func NewRelativeDurationDelay(v float64) task.Delay {
+	e, _ := taskduration.NewRelativeDuration(v)
+	d, _ := task.NewDelay(e)
 	return *d
 }

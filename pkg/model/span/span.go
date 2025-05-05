@@ -3,7 +3,6 @@ package span
 import (
 	"fmt"
 	"github.com/k4ji/tracesimulator/pkg/model/task"
-	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"time"
 )
 
@@ -34,7 +33,7 @@ func FromTaskTree(
 	idGen func() ID,
 	statusGen func(prob float64) Status,
 ) (*TreeNode, error) {
-	rootSpan, err := fromTaskNode(taskTree, traceID, nil, baseStartTime, idGen, statusGen)
+	rootSpan, err := fromTaskNode(taskTree, traceID, nil, nil, baseStartTime, idGen, statusGen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert task tree to span tree: %w", err)
 	}
@@ -47,13 +46,14 @@ func FromTaskTree(
 func fromTaskNode(
 	taskNode *task.TreeNode,
 	traceID TraceID,
-	parent *TreeNode,
+	parentID *ID,
+	parentDuration *time.Duration,
 	baseStartTime time.Time,
 	idGen func() ID,
 	statusGen func(prob float64) Status,
 ) (*TreeNode, error) {
 	spanID := idGen()
-	delay, err := resolveDelay(parent, taskNode.Definition().Delay())
+	delay, err := taskNode.Definition().Delay().Resolve(parentDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve delay: %w", err)
 	}
@@ -71,21 +71,16 @@ func fromTaskNode(
 		kind:                 FromTaskKind(taskNode.Definition().Kind()),
 		startTime:            startTime,
 		endTime:              endTime,
-		parentID: func() *ID {
-			if parent == nil {
-				return nil
-			}
-			return &parent.id
-		}(),
-		externalID:         taskNode.Definition().ExternalID(),
-		children:           []*TreeNode{},
-		linkedTo:           []*TreeNode{},
-		linkedToExternalID: taskNode.Definition().LinkedTo(),
-		status:             statusGen(taskNode.Definition().FailWithProbability()),
+		parentID:             parentID,
+		externalID:           taskNode.Definition().ExternalID(),
+		children:             []*TreeNode{},
+		linkedTo:             []*TreeNode{},
+		linkedToExternalID:   taskNode.Definition().LinkedTo(),
+		status:               statusGen(taskNode.Definition().FailWithProbability()),
 	}
 
 	for _, childTask := range taskNode.Children() {
-		childSpan, err := fromTaskNode(childTask, traceID, &node, startTime, idGen, statusGen)
+		childSpan, err := fromTaskNode(childTask, traceID, &spanID, func() *time.Duration { d := endTime.Sub(startTime); return &d }(), startTime, idGen, statusGen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert child task to span: %w", err)
 		}
@@ -116,29 +111,6 @@ func (n *TreeNode) validate() error {
 		return nil
 	}
 	return checkDuplicateExternalID(n)
-}
-
-func resolveDelay(parent *TreeNode, expr taskduration.Expression) (*time.Duration, error) {
-	switch expr.(type) {
-	case taskduration.RelativeDuration:
-		if parent == nil {
-			return nil, fmt.Errorf("relative delay requires a parent span")
-		}
-		parentDuration := parent.endTime.Sub(parent.startTime)
-		delay, err := expr.Resolve(parentDuration)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve delay: %w", err)
-		}
-		return delay, nil
-	case taskduration.AbsoluteDuration:
-		delay, err := expr.Resolve(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve delay: %w", err)
-		}
-		return delay, nil
-	default:
-		return nil, fmt.Errorf("unsupported delay type: %T", expr)
-	}
 }
 
 // ShiftTimestamps shifts the start and end timestamps of the span and its children by a given duration

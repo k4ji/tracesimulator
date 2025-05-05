@@ -2,7 +2,6 @@ package model
 
 import (
 	domainTask "github.com/k4ji/tracesimulator/pkg/model/task"
-	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"time"
 )
 
@@ -10,7 +9,7 @@ import (
 type Task struct {
 	Name                string
 	ExternalID          *domainTask.ExternalID
-	Delay               taskduration.Expression
+	Delay               domainTask.Delay
 	Duration            time.Duration
 	Kind                string
 	Attributes          map[string]string

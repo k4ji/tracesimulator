@@ -14,7 +14,7 @@ func makeDefaultDefinition(name string) *Definition {
 		make(map[string]string),
 		KindInternal,
 		nil,
-		NewAbsoluteDurationIgnoringError(0),
+		NewAbsoluteDurationDelay(0),
 		0,
 		nil,
 		make([]*ExternalID, 0),
@@ -110,7 +110,8 @@ func TestTreeNode_AddChild(t *testing.T) {
 	}
 }
 
-func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.Expression {
-	d, _ := taskduration.NewAbsoluteDuration(duration)
-	return d
+func NewAbsoluteDurationDelay(duration time.Duration) Delay {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := NewDelay(e)
+	return *d
 }
