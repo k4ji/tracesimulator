@@ -1,6 +1,7 @@
 package span
 
 import (
+	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"testing"
 	"time"
 
@@ -26,19 +27,22 @@ func TestFromTaskTree(t *testing.T) {
 		{
 			name: "transform a root task to a span",
 			taskTree: task.NewTreeNode(
-				task.NewDefinition(
-					"root-task",
-					true,
-					task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
-					map[string]string{"team": "team-a"},
-					task.KindServer,
-					func() *task.ExternalID { id, _ := task.NewExternalID("root-task"); return id }(),
-					1*time.Second,
-					2*time.Second,
-					nil,
-					[]*task.ExternalID{},
-					0.0,
-				),
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
+						map[string]string{"team": "team-a"},
+						task.KindServer,
+						func() *task.ExternalID { id, _ := task.NewExternalID("root-task"); return id }(),
+						NewAbsoluteDurationIgnoringError(1*time.Second),
+						2*time.Second,
+						nil,
+						[]*task.ExternalID{},
+						0.0,
+					)
+					return def
+				}(),
 			),
 			traceID:     traceID,
 			baseEndTime: baseTime,
@@ -66,36 +70,42 @@ func TestFromTaskTree(t *testing.T) {
 			name: "copy resource and attributes of a task into a span",
 			taskTree: func() *task.TreeNode {
 				root := task.NewTreeNode(
-					task.NewDefinition(
-						"root-task",
-						true,
-						task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
-						map[string]string{"key1": "val1"},
-						task.KindInternal,
-						nil,
-						1*time.Second,
-						2*time.Second,
-						nil,
-						[]*task.ExternalID{},
-						0.0,
-					),
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
+							map[string]string{"key1": "val1"},
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationIgnoringError(1*time.Second),
+							2*time.Second,
+							nil,
+							[]*task.ExternalID{},
+							0.0,
+						)
+						return def
+					}(),
 				)
 				//nolint:errcheck
 				root.AddChild(
 					task.NewTreeNode(
-						task.NewDefinition(
-							"child-task",
-							false,
-							task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
-							map[string]string{"key2": "val2"},
-							task.KindClient,
-							nil,
-							3*time.Second,
-							4*time.Second,
-							nil,
-							[]*task.ExternalID{},
-							0.0,
-						),
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", map[string]string{"service.version": "1.0.0"}),
+								map[string]string{"key2": "val2"},
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationIgnoringError(3*time.Second),
+								4*time.Second,
+								nil,
+								[]*task.ExternalID{},
+								0.0,
+							)
+							return def
+						}(),
 					),
 				)
 				return root
@@ -150,39 +160,45 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
-			name: "set start time and duration relative to the parent span",
+			name: "set start time relative to the parent span's start time",
 			taskTree: func() *task.TreeNode {
 				root := task.NewTreeNode(
-					task.NewDefinition(
-						"root-task",
-						true,
-						task.NewResource("service-a", make(map[string]string)),
-						make(map[string]string),
-						task.KindInternal,
-						nil,
-						1*time.Second,
-						2*time.Second,
-						nil,
-						[]*task.ExternalID{},
-						0.0,
-					),
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationIgnoringError(1*time.Second),
+							2*time.Second,
+							nil,
+							[]*task.ExternalID{},
+							0.0,
+						)
+						return def
+					}(),
 				)
 				//nolint:errcheck
 				root.AddChild(
 					task.NewTreeNode(
-						task.NewDefinition(
-							"child-task",
-							false,
-							task.NewResource("service-a", make(map[string]string)),
-							make(map[string]string),
-							task.KindClient,
-							nil,
-							3*time.Second,
-							4*time.Second,
-							nil,
-							[]*task.ExternalID{},
-							0.0,
-						),
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								make(map[string]string),
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationIgnoringError(3*time.Second),
+								4*time.Second,
+								nil,
+								[]*task.ExternalID{},
+								0.0,
+							)
+							return def
+						}(),
 					),
 				)
 				return root
@@ -237,21 +253,117 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
+			name: "set delay relative to the parent span's duration",
+			taskTree: func() *task.TreeNode {
+				root := task.NewTreeNode(
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationIgnoringError(0),
+							10*time.Second,
+							nil,
+							[]*task.ExternalID{},
+							0.0,
+						)
+						return def
+					}(),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								make(map[string]string),
+								task.KindClient,
+								nil,
+								NewRelativeDurationIgnoringError(0.5),
+								20*time.Second,
+								nil,
+								[]*task.ExternalID{},
+								0.0,
+							)
+							return def
+						}(),
+					),
+				)
+				return root
+			}(),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen: func() func() ID {
+				ids := [][8]byte{
+					{0x01}, // ID for the root span
+					{0x02}, // ID for the child span
+				}
+				index := 0
+				return func() ID {
+					id := NewSpanID(ids[index])
+					index++
+					return id
+				}
+			}(),
+			statusGen: func(prob float64) Status { return StatusOK },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime,
+				endTime:              baseTime.Add(10 * time.Second),
+				status:               StatusOK,
+				children: []*TreeNode{
+					{
+						id:                   NewSpanID([8]byte{0x02}),
+						traceID:              traceID,
+						name:                 "child-task",
+						isResourceEntryPoint: false,
+						kind:                 KindClient,
+						resource:             task.NewResource("service-a", make(map[string]string)),
+						attributes:           make(map[string]string),
+						startTime:            baseTime.Add(5 * time.Second),
+						endTime:              baseTime.Add(25 * time.Second),
+						status:               StatusOK,
+						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
+						externalID:           nil,
+						linkedTo:             []*TreeNode{},
+						linkedToExternalID:   []*task.ExternalID{},
+						children:             []*TreeNode{},
+					},
+				},
+				linkedTo:           []*TreeNode{},
+				linkedToExternalID: []*task.ExternalID{},
+			},
+		},
+		{
 			name: "generate error spans based on fail probability",
 			taskTree: task.NewTreeNode(
-				task.NewDefinition(
-					"root-task",
-					true,
-					task.NewResource("service-a", make(map[string]string)),
-					make(map[string]string),
-					task.KindInternal,
-					nil,
-					1*time.Second,
-					2*time.Second,
-					nil,
-					[]*task.ExternalID{},
-					0.5,
-				),
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationIgnoringError(1*time.Second),
+						2*time.Second,
+						nil,
+						[]*task.ExternalID{},
+						0.5,
+					)
+					return def
+				}(),
 			),
 			traceID:     traceID,
 			baseEndTime: baseTime,
@@ -289,6 +401,46 @@ func TestFromTaskTree(t *testing.T) {
 	}
 }
 
+func TestFromTaskTreeError(t *testing.T) {
+	type testCase struct {
+		name     string
+		taskTree *task.TreeNode
+		traceID  TraceID
+	}
+
+	testCases := []testCase{
+		{
+			name: "error when relative duration is specified but no parent task is provided",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewRelativeDurationIgnoringError(0.5),
+						2*time.Second,
+						nil,
+						[]*task.ExternalID{},
+						0.0,
+					)
+					return def
+				}(),
+			),
+			traceID: NewTraceID([16]byte{0x01}),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) }, func(prob float64) Status { return StatusOK })
+			assert.Error(t, err)
+		})
+	}
+}
+
 func TestShiftTimestamps(t *testing.T) {
 	now := time.Now()
 	rootNodeStartTime := now.Add(0 * time.Second)
@@ -313,4 +465,14 @@ func TestShiftTimestamps(t *testing.T) {
 	assert.Equal(t, rootNodeEndTime.Add(delta), node.endTime)
 	assert.Equal(t, childNodeStartTime.Add(delta), node.children[0].startTime)
 	assert.Equal(t, childNodeEndTime.Add(delta), node.children[0].endTime)
+}
+
+func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.AbsoluteDuration {
+	d, _ := taskduration.NewAbsoluteDuration(duration)
+	return *d
+}
+
+func NewRelativeDurationIgnoringError(v float64) taskduration.RelativeDuration {
+	d, _ := taskduration.NewRelativeDuration(v)
+	return *d
 }

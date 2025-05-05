@@ -6,6 +6,7 @@ import (
 	"github.com/k4ji/tracesimulator/pkg/blueprint/service/model"
 	"github.com/k4ji/tracesimulator/pkg/model/span"
 	"github.com/k4ji/tracesimulator/pkg/model/task"
+	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func TestSimulator_Run(t *testing.T) {
 				{
 					Name:       "root-task-a",
 					ExternalID: rootTaskAExternalID,
-					StartAfter: 0,
+					Delay:      NewAbsoluteDurationIgnoringError(0),
 					Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
 					Kind:       "server",
 					Attributes: map[string]string{
@@ -51,14 +52,14 @@ func TestSimulator_Run(t *testing.T) {
 						{
 							Name:       "child-task-a1",
 							ExternalID: childTaskA1ExternalID,
-							StartAfter: func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Delay:      NewAbsoluteDurationIgnoringError(time.Duration(500) * time.Millisecond),
 							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
 							Kind:       "producer",
 						},
 						{
 							Name:       "child-task-a2",
 							ExternalID: childTaskA2ExternalID,
-							StartAfter: func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+							Delay:      NewAbsoluteDurationIgnoringError(time.Duration(1000) * time.Millisecond),
 							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
 							Kind:       "internal",
 						},
@@ -72,14 +73,14 @@ func TestSimulator_Run(t *testing.T) {
 				{
 					Name:       "root-task-b",
 					ExternalID: rootTaskBExternalID,
-					StartAfter: 0,
+					Delay:      NewAbsoluteDurationIgnoringError(0),
 					Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
 					Kind:       "consumer",
 					Children: []model.Task{
 						{
 							Name:       "child-task-b1",
 							ExternalID: nil,
-							StartAfter: func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+							Delay:      NewAbsoluteDurationIgnoringError(time.Duration(1000) * time.Millisecond),
 							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
 							Kind:       "client",
 						},
@@ -97,7 +98,7 @@ func TestSimulator_Run(t *testing.T) {
 				{
 					Name:       "root-task-c",
 					ExternalID: rootTaskCExternalID,
-					StartAfter: func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+					Delay:      NewAbsoluteDurationIgnoringError(time.Duration(1000) * time.Millisecond),
 					Duration:   func() time.Duration { ms, _ := time.ParseDuration("3000ms"); return ms }(),
 					Kind:       "internal",
 					ChildOf:    childTaskA2ExternalID,
@@ -111,7 +112,7 @@ func TestSimulator_Run(t *testing.T) {
 				{
 					Name:                "root-task-d",
 					ExternalID:          nil,
-					StartAfter:          0,
+					Delay:               NewAbsoluteDurationIgnoringError(0),
 					Duration:            func() time.Duration { ms, _ := time.ParseDuration("1500ms"); return ms }(),
 					Kind:                "internal",
 					ChildOf:             nil,
@@ -260,14 +261,14 @@ func TestSimulator_Run(t *testing.T) {
 					{
 						Name:       "task-without-external-id",
 						ExternalID: nil,
-						StartAfter: 0,
+						Delay:      NewAbsoluteDurationIgnoringError(0),
 						Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
 						Kind:       "internal",
 					},
 					{
 						Name:       "task-with-link",
 						ExternalID: nil,
-						StartAfter: 0,
+						Delay:      NewAbsoluteDurationIgnoringError(0),
 						Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
 						Kind:       "internal",
 						LinkedTo: []*task.ExternalID{
@@ -356,4 +357,9 @@ func TestSimulator_Run(t *testing.T) {
 		assert.Equal(t, "root-task-b", transformed[1])
 		assert.Equal(t, "root-task-d", transformed[2])
 	})
+}
+
+func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.AbsoluteDuration {
+	d, _ := taskduration.NewAbsoluteDuration(duration)
+	return *d
 }

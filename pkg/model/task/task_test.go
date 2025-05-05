@@ -1,23 +1,26 @@
 package task
 
 import (
+	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"testing"
+	"time"
 )
 
 func makeDefaultDefinition(name string) *Definition {
-	return NewDefinition(
+	def, _ := NewDefinition(
 		name,
 		false,
 		NewResource("test_service", make(map[string]string)),
 		make(map[string]string),
 		KindInternal,
 		nil,
-		0,
+		NewAbsoluteDurationIgnoringError(0),
 		0,
 		nil,
 		make([]*ExternalID, 0),
 		0,
 	)
+	return def
 }
 
 func TestTreeNode_AddChild(t *testing.T) {
@@ -105,4 +108,9 @@ func TestTreeNode_AddChild(t *testing.T) {
 			}
 		})
 	}
+}
+
+func NewAbsoluteDurationIgnoringError(duration time.Duration) taskduration.Expression {
+	d, _ := taskduration.NewAbsoluteDuration(duration)
+	return d
 }

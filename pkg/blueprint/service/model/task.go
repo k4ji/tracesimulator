@@ -2,6 +2,7 @@ package model
 
 import (
 	domainTask "github.com/k4ji/tracesimulator/pkg/model/task"
+	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"time"
 )
 
@@ -9,7 +10,7 @@ import (
 type Task struct {
 	Name                string
 	ExternalID          *domainTask.ExternalID
-	StartAfter          time.Duration
+	Delay               taskduration.Expression
 	Duration            time.Duration
 	Kind                string
 	Attributes          map[string]string
@@ -21,21 +22,23 @@ type Task struct {
 
 // ToRootNodeWithResource converts the Task to a root node with the given resource
 func (t *Task) ToRootNodeWithResource(resource *domainTask.Resource) (*domainTask.TreeNode, error) {
-	node := domainTask.NewTreeNode(
-		domainTask.NewDefinition(
-			t.Name,
-			true,
-			resource,
-			t.Attributes,
-			domainTask.FromString(t.Kind),
-			t.ExternalID,
-			t.StartAfter,
-			t.Duration,
-			t.ChildOf,
-			t.LinkedTo,
-			t.FailWithProbability,
-		),
+	def, err := domainTask.NewDefinition(
+		t.Name,
+		true,
+		resource,
+		t.Attributes,
+		domainTask.FromString(t.Kind),
+		t.ExternalID,
+		t.Delay,
+		t.Duration,
+		t.ChildOf,
+		t.LinkedTo,
+		t.FailWithProbability,
 	)
+	if err != nil {
+		return nil, err
+	}
+	node := domainTask.NewTreeNode(def)
 	for _, child := range t.Children {
 		childNode, err := child.toChildNodeWithResource(resource)
 		if err != nil {
@@ -49,21 +52,23 @@ func (t *Task) ToRootNodeWithResource(resource *domainTask.Resource) (*domainTas
 }
 
 func (t *Task) toChildNodeWithResource(resource *domainTask.Resource) (*domainTask.TreeNode, error) {
-	node := domainTask.NewTreeNode(
-		domainTask.NewDefinition(
-			t.Name,
-			false,
-			resource,
-			t.Attributes,
-			domainTask.FromString(t.Kind),
-			t.ExternalID,
-			t.StartAfter,
-			t.Duration,
-			nil,
-			t.LinkedTo,
-			t.FailWithProbability,
-		),
+	def, err := domainTask.NewDefinition(
+		t.Name,
+		false,
+		resource,
+		t.Attributes,
+		domainTask.FromString(t.Kind),
+		t.ExternalID,
+		t.Delay,
+		t.Duration,
+		nil,
+		t.LinkedTo,
+		t.FailWithProbability,
 	)
+	if err != nil {
+		return nil, err
+	}
+	node := domainTask.NewTreeNode(def)
 	for _, child := range t.Children {
 		childNode, err := child.toChildNodeWithResource(resource)
 		if err != nil {
