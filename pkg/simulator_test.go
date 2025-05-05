@@ -43,7 +43,7 @@ func TestSimulator_Run(t *testing.T) {
 					Name:       "root-task-a",
 					ExternalID: rootTaskAExternalID,
 					Delay:      NewAbsoluteDurationDelay(0),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "server",
 					Attributes: map[string]string{
 						"key1": "value1",
@@ -53,14 +53,14 @@ func TestSimulator_Run(t *testing.T) {
 							Name:       "child-task-a1",
 							ExternalID: childTaskA1ExternalID,
 							Delay:      NewAbsoluteDurationDelay(time.Duration(500) * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "producer",
 						},
 						{
 							Name:       "child-task-a2",
 							ExternalID: childTaskA2ExternalID,
 							Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "internal",
 						},
 					},
@@ -74,14 +74,14 @@ func TestSimulator_Run(t *testing.T) {
 					Name:       "root-task-b",
 					ExternalID: rootTaskBExternalID,
 					Delay:      NewAbsoluteDurationDelay(0),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "consumer",
 					Children: []model.Task{
 						{
 							Name:       "child-task-b1",
 							ExternalID: nil,
 							Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "client",
 						},
 					},
@@ -99,7 +99,7 @@ func TestSimulator_Run(t *testing.T) {
 					Name:       "root-task-c",
 					ExternalID: rootTaskCExternalID,
 					Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("3000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(3000 * time.Millisecond),
 					Kind:       "internal",
 					ChildOf:    childTaskA2ExternalID,
 				},
@@ -113,7 +113,7 @@ func TestSimulator_Run(t *testing.T) {
 					Name:                "root-task-d",
 					ExternalID:          nil,
 					Delay:               NewAbsoluteDurationDelay(0),
-					Duration:            func() time.Duration { ms, _ := time.ParseDuration("1500ms"); return ms }(),
+					Duration:            NewAbsoluteDurationDuration(1500 * time.Millisecond),
 					Kind:                "internal",
 					ChildOf:             nil,
 					FailWithProbability: 1.0,
@@ -262,14 +262,14 @@ func TestSimulator_Run(t *testing.T) {
 						Name:       "task-without-external-id",
 						ExternalID: nil,
 						Delay:      NewAbsoluteDurationDelay(0),
-						Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+						Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 						Kind:       "internal",
 					},
 					{
 						Name:       "task-with-link",
 						ExternalID: nil,
 						Delay:      NewAbsoluteDurationDelay(0),
-						Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+						Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 						Kind:       "internal",
 						LinkedTo: []*task.ExternalID{
 							missingExternalID,
@@ -295,13 +295,13 @@ func TestSimulator_Run(t *testing.T) {
 						{
 							Name:       "root-task-a",
 							ExternalID: duplicateExternalID,
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 							Kind:       "internal",
 							Children: []model.Task{
 								{
 									Name:       "child-task-a1",
 									ExternalID: duplicateExternalID,
-									Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+									Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 									Kind:       "internal",
 								},
 							},
@@ -325,7 +325,7 @@ func TestSimulator_Run(t *testing.T) {
 						{
 							Name:       "root-task-a",
 							ExternalID: duplicateExternalID,
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 							Kind:       "internal",
 						},
 					},
@@ -336,7 +336,7 @@ func TestSimulator_Run(t *testing.T) {
 						{
 							Name:       "root-task-b",
 							ExternalID: duplicateExternalID,
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("2000ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(2000 * time.Millisecond),
 							Kind:       "internal",
 						},
 					},
@@ -362,5 +362,11 @@ func TestSimulator_Run(t *testing.T) {
 func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
 	e, _ := taskduration.NewAbsoluteDuration(duration)
 	d, _ := task.NewDelay(e)
+	return *d
+}
+
+func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDuration(e)
 	return *d
 }

@@ -36,7 +36,7 @@ func TestAdapter_Transform(t *testing.T) {
 					Name:       "root-task-a",
 					ExternalID: rootTaskAExternalID,
 					Delay:      NewAbsoluteDurationDelay(0),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("1000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "client",
 					Attributes: map[string]string{
 						"attribute-key-root-task-a": "attribute-value-root-task-a",
@@ -46,7 +46,7 @@ func TestAdapter_Transform(t *testing.T) {
 							Name:       "child-task-a1",
 							ExternalID: childTaskA1ExternalID,
 							Delay:      NewAbsoluteDurationDelay(500 * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "producer",
 							Attributes: map[string]string{
 								"attribute-key-child-task-a1": "attribute-value-child-task-a1",
@@ -56,7 +56,7 @@ func TestAdapter_Transform(t *testing.T) {
 							Name:       "child-task-a2",
 							ExternalID: childTaskA2ExternalID,
 							Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "client",
 							Attributes: map[string]string{
 								"attribute-key-child-task-a2": "attribute-value-child-task-a2",
@@ -77,7 +77,7 @@ func TestAdapter_Transform(t *testing.T) {
 					Name:       "root-task-b",
 					ExternalID: rootTaskBExternalID,
 					Delay:      NewAbsoluteDurationDelay(0),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("2000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(2000 * time.Millisecond),
 					Kind:       "consumer",
 					Attributes: map[string]string{
 						"attribute-key-root-task-b": "attribute-value-root-task-b",
@@ -87,7 +87,7 @@ func TestAdapter_Transform(t *testing.T) {
 							Name:       "child-task-b1",
 							ExternalID: nil,
 							Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
-							Duration:   func() time.Duration { ms, _ := time.ParseDuration("500ms"); return ms }(),
+							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "internal",
 							Attributes: map[string]string{
 								"attribute-key-child-task-b1": "attribute-value-child-task-b1",
@@ -112,7 +112,7 @@ func TestAdapter_Transform(t *testing.T) {
 					Name:       "root-task-c",
 					ExternalID: rootTaskCExternalID,
 					Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
-					Duration:   func() time.Duration { ms, _ := time.ParseDuration("2000ms"); return ms }(),
+					Duration:   NewAbsoluteDurationDuration(2000 * time.Millisecond),
 					Kind:       "server",
 					ChildOf:    rootTaskAExternalID,
 					Attributes: map[string]string{
@@ -132,7 +132,7 @@ func TestAdapter_Transform(t *testing.T) {
 					Name:                "root-task-d",
 					ExternalID:          nil,
 					Delay:               NewAbsoluteDurationDelay(0),
-					Duration:            func() time.Duration { ms, _ := time.ParseDuration("4000ms"); return ms }(),
+					Duration:            NewAbsoluteDurationDuration(4000 * time.Millisecond),
 					Kind:                "server",
 					ChildOf:             childTaskA2ExternalID,
 					FailWithProbability: 1.0,
@@ -412,5 +412,11 @@ func TestAdapter_Transform(t *testing.T) {
 func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
 	e, _ := taskduration.NewAbsoluteDuration(duration)
 	d, _ := task.NewDelay(e)
+	return *d
+}
+
+func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDuration(e)
 	return *d
 }

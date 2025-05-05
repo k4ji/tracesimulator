@@ -22,7 +22,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 						Name:       "task-a1",
 						ExternalID: func() *task.ExternalID { id, _ := task.NewExternalID("task-a1"); return id }(),
 						Delay:      NewAbsoluteDurationDelay(0),
-						Duration:   time.Duration(1000) * time.Millisecond,
+						Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 						Kind:       "server",
 						Attributes: map[string]string{
 							"key1": "value1",
@@ -32,7 +32,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 								Name:       "task-a1-child",
 								ExternalID: func() *task.ExternalID { id, _ := task.NewExternalID("task-a1-child"); return id }(),
 								Delay:      NewAbsoluteDurationDelay(time.Duration(500) * time.Millisecond),
-								Duration:   time.Duration(500) * time.Millisecond,
+								Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 								Kind:       "producer",
 								Attributes: map[string]string{
 									"key2": "value2",
@@ -45,7 +45,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 						Name:     "task-a2",
 						Kind:     "internal",
 						Delay:    NewAbsoluteDurationDelay(0),
-						Duration: time.Duration(100) * time.Millisecond,
+						Duration: NewAbsoluteDurationDuration(100 * time.Millisecond),
 					},
 				},
 			},
@@ -55,7 +55,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 					{Name: "task-b1",
 						Kind:     "internal",
 						Delay:    NewAbsoluteDurationDelay(0),
-						Duration: time.Duration(2000) * time.Millisecond,
+						Duration: NewAbsoluteDurationDuration(2000 * time.Millisecond),
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, task.KindServer, rootTaskNodes[0].Definition().Kind())
 		assert.Equal(t, map[string]string{"key1": "value1"}, rootTaskNodes[0].Definition().Attributes())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[0].Definition().Delay())
-		assert.Equal(t, time.Duration(1000)*time.Millisecond, rootTaskNodes[0].Definition().Duration())
+		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(1000)*time.Millisecond), rootTaskNodes[0].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[0].Definition().FailWithProbability())
 
 		assert.Equal(t, "task-a1-child", rootTaskNodes[0].Children()[0].Definition().Name())
@@ -83,7 +83,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, task.KindProducer, rootTaskNodes[0].Children()[0].Definition().Kind())
 		assert.Equal(t, map[string]string{"key2": "value2"}, rootTaskNodes[0].Children()[0].Definition().Attributes())
 		assert.Equal(t, NewAbsoluteDurationDelay(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Delay())
-		assert.Equal(t, time.Duration(500)*time.Millisecond, rootTaskNodes[0].Children()[0].Definition().Duration())
+		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Duration())
 		assert.Equal(t, 0.1, rootTaskNodes[0].Children()[0].Definition().FailWithProbability())
 
 		assert.Equal(t, "task-a2", rootTaskNodes[1].Definition().Name())
@@ -91,14 +91,14 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, "test", rootTaskNodes[1].Definition().Resource().Attributes()["env"])
 		assert.Equal(t, task.KindInternal, rootTaskNodes[1].Definition().Kind())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[1].Definition().Delay())
-		assert.Equal(t, time.Duration(100)*time.Millisecond, rootTaskNodes[1].Definition().Duration())
+		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(100)*time.Millisecond), rootTaskNodes[1].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[1].Definition().FailWithProbability())
 
 		assert.Equal(t, "task-b1", rootTaskNodes[2].Definition().Name())
 		assert.Equal(t, "service-b", rootTaskNodes[2].Definition().Resource().Name())
 		assert.Equal(t, task.KindInternal, rootTaskNodes[2].Definition().Kind())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[2].Definition().Delay())
-		assert.Equal(t, time.Duration(2000)*time.Millisecond, rootTaskNodes[2].Definition().Duration())
+		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(2000)*time.Millisecond), rootTaskNodes[2].Definition().Duration())
 		assert.Equal(t, 0.0, rootTaskNodes[2].Definition().FailWithProbability())
 	})
 
@@ -320,5 +320,11 @@ func TestBlueprint_Interpret(t *testing.T) {
 func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
 	e, _ := taskduration.NewAbsoluteDuration(duration)
 	d, _ := task.NewDelay(e)
+	return *d
+}
+
+func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDuration(e)
 	return *d
 }

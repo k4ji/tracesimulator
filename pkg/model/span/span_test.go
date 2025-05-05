@@ -36,7 +36,7 @@ func TestFromTaskTree(t *testing.T) {
 						task.KindServer,
 						func() *task.ExternalID { id, _ := task.NewExternalID("root-task"); return id }(),
 						NewAbsoluteDurationDelay(1*time.Second),
-						2*time.Second,
+						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
 						0.0,
@@ -79,7 +79,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.KindInternal,
 							nil,
 							NewAbsoluteDurationDelay(1*time.Second),
-							2*time.Second,
+							NewAbsoluteDurationDuration(2*time.Second),
 							nil,
 							[]*task.ExternalID{},
 							0.0,
@@ -99,7 +99,7 @@ func TestFromTaskTree(t *testing.T) {
 								task.KindClient,
 								nil,
 								NewAbsoluteDurationDelay(3*time.Second),
-								4*time.Second,
+								NewAbsoluteDurationDuration(4*time.Second),
 								nil,
 								[]*task.ExternalID{},
 								0.0,
@@ -172,7 +172,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.KindInternal,
 							nil,
 							NewAbsoluteDurationDelay(1*time.Second),
-							2*time.Second,
+							NewAbsoluteDurationDuration(2*time.Second),
 							nil,
 							[]*task.ExternalID{},
 							0.0,
@@ -192,7 +192,7 @@ func TestFromTaskTree(t *testing.T) {
 								task.KindClient,
 								nil,
 								NewAbsoluteDurationDelay(3*time.Second),
-								4*time.Second,
+								NewAbsoluteDurationDuration(4*time.Second),
 								nil,
 								[]*task.ExternalID{},
 								0.0,
@@ -265,7 +265,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.KindInternal,
 							nil,
 							NewAbsoluteDurationDelay(0),
-							10*time.Second,
+							NewAbsoluteDurationDuration(10*time.Second),
 							nil,
 							[]*task.ExternalID{},
 							0.0,
@@ -285,7 +285,7 @@ func TestFromTaskTree(t *testing.T) {
 								task.KindClient,
 								nil,
 								NewRelativeDurationDelay(0.5),
-								20*time.Second,
+								NewAbsoluteDurationDuration(20*time.Second),
 								nil,
 								[]*task.ExternalID{},
 								0.0,
@@ -346,6 +346,99 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
+			name: "set duration relative to the parent span's duration",
+			taskTree: func() *task.TreeNode {
+				root := task.NewTreeNode(
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationDelay(0),
+							NewAbsoluteDurationDuration(10*time.Second),
+							nil,
+							[]*task.ExternalID{},
+							0.0,
+						)
+						return def
+					}(),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								make(map[string]string),
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationDelay(0),
+								NewRelativeDurationDuration(0.5),
+								nil,
+								[]*task.ExternalID{},
+								0.0,
+							)
+							return def
+						}(),
+					),
+				)
+				return root
+			}(),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen: func() func() ID {
+				ids := [][8]byte{
+					{0x01}, // ID for the root span
+					{0x02}, // ID for the child span
+				}
+				index := 0
+				return func() ID {
+					id := NewSpanID(ids[index])
+					index++
+					return id
+				}
+			}(),
+			statusGen: func(prob float64) Status { return StatusOK },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime,
+				endTime:              baseTime.Add(10 * time.Second),
+				status:               StatusOK,
+				children: []*TreeNode{
+					{
+						id:                   NewSpanID([8]byte{0x02}),
+						traceID:              traceID,
+						name:                 "child-task",
+						isResourceEntryPoint: false,
+						kind:                 KindClient,
+						resource:             task.NewResource("service-a", make(map[string]string)),
+						attributes:           make(map[string]string),
+						startTime:            baseTime.Add(0 * time.Second),
+						endTime:              baseTime.Add(5 * time.Second),
+						status:               StatusOK,
+						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
+						externalID:           nil,
+						linkedTo:             []*TreeNode{},
+						linkedToExternalID:   []*task.ExternalID{},
+						children:             []*TreeNode{},
+					},
+				},
+				linkedTo:           []*TreeNode{},
+				linkedToExternalID: []*task.ExternalID{},
+			},
+		},
+		{
 			name: "generate error spans based on fail probability",
 			taskTree: task.NewTreeNode(
 				func() *task.Definition {
@@ -357,7 +450,7 @@ func TestFromTaskTree(t *testing.T) {
 						task.KindInternal,
 						nil,
 						NewAbsoluteDurationDelay(1*time.Second),
-						2*time.Second,
+						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
 						0.5,
@@ -421,7 +514,7 @@ func TestFromTaskTreeError(t *testing.T) {
 						task.KindInternal,
 						nil,
 						NewRelativeDurationDelay(0.5),
-						2*time.Second,
+						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
 						0.0,
@@ -476,5 +569,17 @@ func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
 func NewRelativeDurationDelay(v float64) task.Delay {
 	e, _ := taskduration.NewRelativeDuration(v)
 	d, _ := task.NewDelay(e)
+	return *d
+}
+
+func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
+	e, _ := taskduration.NewAbsoluteDuration(duration)
+	d, _ := task.NewDuration(e)
+	return *d
+}
+
+func NewRelativeDurationDuration(v float64) task.Duration {
+	e, _ := taskduration.NewRelativeDuration(v)
+	d, _ := task.NewDuration(e)
 	return *d
 }

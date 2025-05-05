@@ -2,7 +2,6 @@ package model
 
 import (
 	domainTask "github.com/k4ji/tracesimulator/pkg/model/task"
-	"time"
 )
 
 // Task represents an operation that can be performed by a service
@@ -10,7 +9,7 @@ type Task struct {
 	Name                string
 	ExternalID          *domainTask.ExternalID
 	Delay               domainTask.Delay
-	Duration            time.Duration
+	Duration            domainTask.Duration
 	Kind                string
 	Attributes          map[string]string
 	Children            []Task

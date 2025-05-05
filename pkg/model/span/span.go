@@ -57,9 +57,13 @@ func fromTaskNode(
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve delay: %w", err)
 	}
+	duration, err := taskNode.Definition().Duration().Resolve(parentDuration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve duration: %w", err)
+	}
 
 	startTime := baseStartTime.Add(*delay)
-	endTime := startTime.Add(taskNode.Definition().Duration())
+	endTime := startTime.Add(*duration)
 
 	node := TreeNode{
 		id:                   spanID,
@@ -80,7 +84,7 @@ func fromTaskNode(
 	}
 
 	for _, childTask := range taskNode.Children() {
-		childSpan, err := fromTaskNode(childTask, traceID, &spanID, func() *time.Duration { d := endTime.Sub(startTime); return &d }(), startTime, idGen, statusGen)
+		childSpan, err := fromTaskNode(childTask, traceID, &spanID, duration, startTime, idGen, statusGen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert child task to span: %w", err)
 		}

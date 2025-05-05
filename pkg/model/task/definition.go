@@ -1,9 +1,5 @@
 package task
 
-import (
-	"time"
-)
-
 // Definition represents a task in the trace
 type Definition struct {
 	name                 string
@@ -13,14 +9,14 @@ type Definition struct {
 	kind                 Kind
 	externalID           *ExternalID
 	delay                Delay         // Relative time from the start of the parent task
-	duration             time.Duration // Relative time from the start of the parent task
+	duration             Duration      // Relative time from the start of the parent task
 	childOf              *ExternalID   // ID of the parent task (if any)
 	linkedTo             []*ExternalID // IDs of linked spans (for producer/consumer relationships)
 	failWithProbability  float64       // Probability of error
 }
 
 // NewDefinition creates a new task definition
-func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration time.Duration, childOf *ExternalID, linkedTo []*ExternalID, failWithProbability float64) (*Definition, error) {
+func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration Duration, childOf *ExternalID, linkedTo []*ExternalID, failWithProbability float64) (*Definition, error) {
 	return &Definition{
 		name:                 name,
 		isResourceEntryPoint: isResourceEntryPoint,
@@ -64,7 +60,7 @@ func (d *Definition) Delay() Delay {
 	return d.delay
 }
 
-func (d *Definition) Duration() time.Duration {
+func (d *Definition) Duration() Duration {
 	return d.duration
 }
 
