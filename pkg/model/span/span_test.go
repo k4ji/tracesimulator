@@ -666,6 +666,35 @@ func TestFromTaskTreeError(t *testing.T) {
 			),
 			traceID: NewTraceID([16]byte{0x01}),
 		},
+		{
+			name: "error when event delay is greater than the task duration",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(0),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{
+							task.NewEvent(
+								"event-name",
+								NewAbsoluteDurationDelay(3*time.Second),
+								make(map[string]string),
+							),
+						},
+						0.0,
+					)
+					return def
+				}(),
+			),
+			traceID: NewTraceID([16]byte{0x01}),
+		},
 	}
 
 	for _, tc := range testCases {

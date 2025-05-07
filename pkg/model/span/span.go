@@ -72,6 +72,9 @@ func fromTaskNode(
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve event delay: %w", err)
 		}
+		if *d > *duration {
+			return nil, fmt.Errorf("event delay cannot be greater than task duration")
+		}
 		events[i] = NewEvent(
 			event.Name(),
 			startTime.Add(*d),
