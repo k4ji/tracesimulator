@@ -38,6 +38,22 @@ func TestAdapter_Transform(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(0),
 					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "client",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-a-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-a-1": "attribute-value-event-root-task-a-1",
+							},
+						),
+						task.NewEvent(
+							"event-root-task-a-2",
+							NewAbsoluteDurationDelay(100*time.Millisecond),
+							map[string]string{
+								"attribute-key-event-root-task-a-2": "attribute-value-event-root-task-a-2",
+							},
+						),
+					},
 					Attributes: map[string]string{
 						"attribute-key-root-task-a": "attribute-value-root-task-a",
 					},
@@ -48,6 +64,15 @@ func TestAdapter_Transform(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(500 * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "producer",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-a1-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-a1-1": "attribute-value-event-child-task-a1-1",
+									},
+								),
+							},
 							Attributes: map[string]string{
 								"attribute-key-child-task-a1": "attribute-value-child-task-a1",
 							},
@@ -58,6 +83,15 @@ func TestAdapter_Transform(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "client",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-a2-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-a2-1": "attribute-value-event-child-task-a2-1",
+									},
+								),
+							},
 							Attributes: map[string]string{
 								"attribute-key-child-task-a2": "attribute-value-child-task-a2",
 							},
@@ -79,6 +113,15 @@ func TestAdapter_Transform(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(0),
 					Duration:   NewAbsoluteDurationDuration(2000 * time.Millisecond),
 					Kind:       "consumer",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-b-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-b-1": "attribute-value-event-root-task-b-1",
+							},
+						),
+					},
 					Attributes: map[string]string{
 						"attribute-key-root-task-b": "attribute-value-root-task-b",
 					},
@@ -89,6 +132,15 @@ func TestAdapter_Transform(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "internal",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-b1-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-b1-1": "attribute-value-event-child-task-b1-1",
+									},
+								),
+							},
 							Attributes: map[string]string{
 								"attribute-key-child-task-b1": "attribute-value-child-task-b1",
 							},
@@ -114,7 +166,16 @@ func TestAdapter_Transform(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(1000 * time.Millisecond),
 					Duration:   NewAbsoluteDurationDuration(2000 * time.Millisecond),
 					Kind:       "server",
-					ChildOf:    rootTaskAExternalID,
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-c-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-c-1": "attribute-value-event-root-task-c-1",
+							},
+						),
+					},
+					ChildOf: rootTaskAExternalID,
 					Attributes: map[string]string{
 						"attribute-key-root-task-c": "attribute-value-root-task-c",
 					},
@@ -129,11 +190,20 @@ func TestAdapter_Transform(t *testing.T) {
 			},
 			Tasks: []model.Task{
 				{
-					Name:                "root-task-d",
-					ExternalID:          nil,
-					Delay:               NewAbsoluteDurationDelay(0),
-					Duration:            NewAbsoluteDurationDuration(4000 * time.Millisecond),
-					Kind:                "server",
+					Name:       "root-task-d",
+					ExternalID: nil,
+					Delay:      NewAbsoluteDurationDelay(0),
+					Duration:   NewAbsoluteDurationDuration(4000 * time.Millisecond),
+					Kind:       "server",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-d-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-d-1": "attribute-value-event-root-task-d-1",
+							},
+						),
+					},
 					ChildOf:             childTaskA2ExternalID,
 					FailWithProbability: 1.0,
 					Attributes: map[string]string{
@@ -330,6 +400,109 @@ func TestAdapter_Transform(t *testing.T) {
 
 				assert.Equal(t, expectedTime.Start.In(time.UTC), actualStart, "Unexpected end time for span: %s", spanName)
 				assert.Equal(t, expectedTime.End.In(time.UTC), actualEnd, "Unexpected end time for span: %s", spanName)
+			}
+		}
+	})
+
+	t.Run("span events are kept", func(t *testing.T) {
+		expectedStartTime := now.Add(-5000 * time.Millisecond)
+
+		expectedEvents := map[string][]struct {
+			Name       string
+			OccurredAt time.Time
+			Attributes map[string]string
+		}{
+			"root-task-a": {
+				{
+					Name:       "event-root-task-a-1",
+					OccurredAt: expectedStartTime,
+					Attributes: map[string]string{
+						"attribute-key-event-root-task-a-1": "attribute-value-event-root-task-a-1",
+					},
+				},
+				{
+					Name:       "event-root-task-a-2",
+					OccurredAt: expectedStartTime.Add(100 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-root-task-a-2": "attribute-value-event-root-task-a-2",
+					},
+				},
+			},
+			"child-task-a1": {
+				{
+					Name:       "event-child-task-a1-1",
+					OccurredAt: expectedStartTime.Add(500 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-child-task-a1-1": "attribute-value-event-child-task-a1-1",
+					},
+				},
+			},
+			"child-task-a2": {
+				{
+					Name:       "event-child-task-a2-1",
+					OccurredAt: expectedStartTime.Add(1000 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-child-task-a2-1": "attribute-value-event-child-task-a2-1",
+					},
+				},
+			},
+			"root-task-b": {
+				{
+					Name:       "event-root-task-b-1",
+					OccurredAt: expectedStartTime,
+					Attributes: map[string]string{
+						"attribute-key-event-root-task-b-1": "attribute-value-event-root-task-b-1",
+					},
+				},
+			},
+			"child-task-b1": {
+				{
+					Name:       "event-child-task-b1-1",
+					OccurredAt: expectedStartTime.Add(1000 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-child-task-b1-1": "attribute-value-event-child-task-b1-1",
+					},
+				},
+			},
+			"root-task-c": {
+				{
+					Name:       "event-root-task-c-1",
+					OccurredAt: expectedStartTime.Add(1000 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-root-task-c-1": "attribute-value-event-root-task-c-1",
+					},
+				},
+			},
+			"root-task-d": {
+				{
+					Name:       "event-root-task-d-1",
+					OccurredAt: expectedStartTime.Add(1000 * time.Millisecond),
+					Attributes: map[string]string{
+						"attribute-key-event-root-task-d-1": "attribute-value-event-root-task-d-1",
+					},
+				},
+			},
+		}
+		for spanName, expectedEvents := range expectedEvents {
+			span, spanExists := spanMap[spanName]
+			assert.True(t, spanExists, "Span not found: %s", spanName)
+
+			if spanExists {
+				events := span.Events()
+				assert.Equal(t, len(expectedEvents), events.Len(), "Unexpected number of events for span: %s", spanName)
+
+				for i := 0; i < events.Len(); i++ {
+					event := events.At(i)
+					expectedEvent := expectedEvents[i]
+
+					assert.Equal(t, expectedEvent.Name, event.Name())
+					assert.Equal(t, expectedEvent.OccurredAt.In(time.UTC), event.Timestamp().AsTime(), "Unexpected event time for span: %s", spanName)
+					for key, value := range expectedEvent.Attributes {
+						attr, ok := event.Attributes().Get(key)
+						assert.True(t, ok, "Missing attribute: %s", key)
+						assert.Equal(t, value, attr.AsString())
+					}
+				}
 			}
 		}
 	})

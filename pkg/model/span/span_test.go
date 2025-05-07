@@ -39,6 +39,13 @@ func TestFromTaskTree(t *testing.T) {
 						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
+						[]task.Event{
+							task.NewEvent(
+								"root-task-event",
+								NewAbsoluteDurationDelay(1*time.Second),
+								make(map[string]string),
+							),
+						},
 						0.0,
 					)
 					return def
@@ -63,7 +70,10 @@ func TestFromTaskTree(t *testing.T) {
 				status:               StatusOK,
 				children:             []*TreeNode{},
 				linkedTo:             []*TreeNode{},
-				linkedToExternalID:   []*task.ExternalID{},
+				events: []Event{
+					NewEvent("root-task-event", baseTime.Add(2*time.Second), make(map[string]string)),
+				},
+				linkedToExternalID: []*task.ExternalID{},
 			},
 		},
 		{
@@ -82,6 +92,7 @@ func TestFromTaskTree(t *testing.T) {
 							NewAbsoluteDurationDuration(2*time.Second),
 							nil,
 							[]*task.ExternalID{},
+							[]task.Event{},
 							0.0,
 						)
 						return def
@@ -102,6 +113,7 @@ func TestFromTaskTree(t *testing.T) {
 								NewAbsoluteDurationDuration(4*time.Second),
 								nil,
 								[]*task.ExternalID{},
+								[]task.Event{},
 								0.0,
 							)
 							return def
@@ -135,6 +147,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           map[string]string{"key1": "val1"},
 				startTime:            baseTime.Add(1 * time.Second),
 				endTime:              baseTime.Add(3 * time.Second),
+				events:               []Event{},
 				status:               StatusOK,
 				children: []*TreeNode{
 					{
@@ -151,6 +164,7 @@ func TestFromTaskTree(t *testing.T) {
 						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
 						externalID:           nil,
 						linkedTo:             []*TreeNode{},
+						events:               []Event{},
 						linkedToExternalID:   []*task.ExternalID{},
 						children:             []*TreeNode{},
 					},
@@ -175,6 +189,7 @@ func TestFromTaskTree(t *testing.T) {
 							NewAbsoluteDurationDuration(2*time.Second),
 							nil,
 							[]*task.ExternalID{},
+							[]task.Event{},
 							0.0,
 						)
 						return def
@@ -195,6 +210,7 @@ func TestFromTaskTree(t *testing.T) {
 								NewAbsoluteDurationDuration(4*time.Second),
 								nil,
 								[]*task.ExternalID{},
+								[]task.Event{},
 								0.0,
 							)
 							return def
@@ -228,6 +244,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           make(map[string]string),
 				startTime:            baseTime.Add(1 * time.Second),
 				endTime:              baseTime.Add(3 * time.Second),
+				events:               []Event{},
 				status:               StatusOK,
 				children: []*TreeNode{
 					{
@@ -244,6 +261,7 @@ func TestFromTaskTree(t *testing.T) {
 						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
 						externalID:           nil,
 						linkedTo:             []*TreeNode{},
+						events:               []Event{},
 						linkedToExternalID:   []*task.ExternalID{},
 						children:             []*TreeNode{},
 					},
@@ -268,6 +286,7 @@ func TestFromTaskTree(t *testing.T) {
 							NewAbsoluteDurationDuration(10*time.Second),
 							nil,
 							[]*task.ExternalID{},
+							[]task.Event{},
 							0.0,
 						)
 						return def
@@ -288,6 +307,7 @@ func TestFromTaskTree(t *testing.T) {
 								NewAbsoluteDurationDuration(20*time.Second),
 								nil,
 								[]*task.ExternalID{},
+								[]task.Event{},
 								0.0,
 							)
 							return def
@@ -321,6 +341,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           make(map[string]string),
 				startTime:            baseTime,
 				endTime:              baseTime.Add(10 * time.Second),
+				events:               []Event{},
 				status:               StatusOK,
 				children: []*TreeNode{
 					{
@@ -337,8 +358,122 @@ func TestFromTaskTree(t *testing.T) {
 						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
 						externalID:           nil,
 						linkedTo:             []*TreeNode{},
+						events:               []Event{},
 						linkedToExternalID:   []*task.ExternalID{},
 						children:             []*TreeNode{},
+					},
+				},
+				linkedTo:           []*TreeNode{},
+				linkedToExternalID: []*task.ExternalID{},
+			},
+		},
+		{
+			name: "set event delay relative to the parent span's duration",
+			taskTree: func() *task.TreeNode {
+				root := task.NewTreeNode(
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationDelay(0),
+							NewAbsoluteDurationDuration(30*time.Second),
+							nil,
+							[]*task.ExternalID{},
+							[]task.Event{
+								task.NewEvent(
+									"relative-delay-event",
+									NewRelativeDurationDelay(0.5),
+									make(map[string]string),
+								),
+							},
+							0.0,
+						)
+						return def
+					}(),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								make(map[string]string),
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationDelay(20*time.Second),
+								NewAbsoluteDurationDuration(10*time.Second),
+								nil,
+								[]*task.ExternalID{},
+								[]task.Event{
+									task.NewEvent(
+										"absolute-delay-event",
+										NewAbsoluteDurationDelay(5*time.Second),
+										make(map[string]string),
+									),
+								},
+								0.0,
+							)
+							return def
+						}(),
+					),
+				)
+				return root
+			}(),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen: func() func() ID {
+				ids := [][8]byte{
+					{0x01}, // ID for the root span
+					{0x02}, // ID for the child span
+				}
+				index := 0
+				return func() ID {
+					id := NewSpanID(ids[index])
+					index++
+					return id
+				}
+			}(),
+			statusGen: func(prob float64) Status { return StatusOK },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime,
+				endTime:              baseTime.Add(30 * time.Second),
+				events: []Event{
+					NewEvent("relative-delay-event", baseTime.Add(15*time.Second), make(map[string]string)),
+				},
+				status: StatusOK,
+				children: []*TreeNode{
+					{
+						id:                   NewSpanID([8]byte{0x02}),
+						traceID:              traceID,
+						name:                 "child-task",
+						isResourceEntryPoint: false,
+						kind:                 KindClient,
+						resource:             task.NewResource("service-a", make(map[string]string)),
+						attributes:           make(map[string]string),
+						startTime:            baseTime.Add(20 * time.Second),
+						endTime:              baseTime.Add(30 * time.Second),
+						status:               StatusOK,
+						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
+						externalID:           nil,
+						linkedTo:             []*TreeNode{},
+						events: []Event{
+							NewEvent("absolute-delay-event", baseTime.Add(25*time.Second), make(map[string]string)),
+						},
+						linkedToExternalID: []*task.ExternalID{},
+						children:           []*TreeNode{},
 					},
 				},
 				linkedTo:           []*TreeNode{},
@@ -361,6 +496,7 @@ func TestFromTaskTree(t *testing.T) {
 							NewAbsoluteDurationDuration(10*time.Second),
 							nil,
 							[]*task.ExternalID{},
+							[]task.Event{},
 							0.0,
 						)
 						return def
@@ -381,6 +517,7 @@ func TestFromTaskTree(t *testing.T) {
 								NewRelativeDurationDuration(0.5),
 								nil,
 								[]*task.ExternalID{},
+								[]task.Event{},
 								0.0,
 							)
 							return def
@@ -414,6 +551,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           make(map[string]string),
 				startTime:            baseTime,
 				endTime:              baseTime.Add(10 * time.Second),
+				events:               []Event{},
 				status:               StatusOK,
 				children: []*TreeNode{
 					{
@@ -430,6 +568,7 @@ func TestFromTaskTree(t *testing.T) {
 						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
 						externalID:           nil,
 						linkedTo:             []*TreeNode{},
+						events:               []Event{},
 						linkedToExternalID:   []*task.ExternalID{},
 						children:             []*TreeNode{},
 					},
@@ -453,6 +592,7 @@ func TestFromTaskTree(t *testing.T) {
 						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
+						[]task.Event{},
 						0.5,
 					)
 					return def
@@ -479,6 +619,7 @@ func TestFromTaskTree(t *testing.T) {
 				endTime:              baseTime.Add(3 * time.Second),
 				status:               StatusError,
 				linkedTo:             []*TreeNode{},
+				events:               []Event{},
 				linkedToExternalID:   []*task.ExternalID{},
 				children:             []*TreeNode{},
 			},
@@ -517,6 +658,7 @@ func TestFromTaskTreeError(t *testing.T) {
 						NewAbsoluteDurationDuration(2*time.Second),
 						nil,
 						[]*task.ExternalID{},
+						[]task.Event{},
 						0.0,
 					)
 					return def

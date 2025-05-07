@@ -18,6 +18,7 @@ func makeDefaultDefinition(name string) *Definition {
 		NewAbsoluteDurationDuration(0),
 		nil,
 		make([]*ExternalID, 0),
+		make([]Event, 0),
 		0,
 	)
 	return def

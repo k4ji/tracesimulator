@@ -81,6 +81,15 @@ func (a *Adapter) addSpanToScope(scopeSpans ptrace.ScopeSpans, node *span.TreeNo
 	otelSpan.SetEndTimestamp(pcommon.NewTimestampFromTime(node.EndTime()))
 	otelSpan.Status().SetCode(toOtelStatusCode(node.Status()))
 
+	for _, event := range node.Events() {
+		otelEvent := otelSpan.Events().AppendEmpty()
+		otelEvent.SetTimestamp(pcommon.NewTimestampFromTime(event.OccurredAt()))
+		otelEvent.SetName(event.Name())
+		for k, v := range event.Attributes() {
+			otelEvent.Attributes().PutStr(k, v)
+		}
+	}
+
 	for k, v := range node.Attributes() {
 		otelSpan.Attributes().PutStr(k, v)
 	}

@@ -12,11 +12,12 @@ type Definition struct {
 	duration             Duration      // Relative time from the start of the parent task
 	childOf              *ExternalID   // ID of the parent task (if any)
 	linkedTo             []*ExternalID // IDs of linked spans (for producer/consumer relationships)
+	events               []Event       // Events associated with the task
 	failWithProbability  float64       // Probability of error
 }
 
 // NewDefinition creates a new task definition
-func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration Duration, childOf *ExternalID, linkedTo []*ExternalID, failWithProbability float64) (*Definition, error) {
+func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration Duration, childOf *ExternalID, linkedTo []*ExternalID, events []Event, failWithProbability float64) (*Definition, error) {
 	return &Definition{
 		name:                 name,
 		isResourceEntryPoint: isResourceEntryPoint,
@@ -28,6 +29,7 @@ func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, a
 		duration:             duration,
 		childOf:              childOf,
 		linkedTo:             linkedTo,
+		events:               events,
 		failWithProbability:  failWithProbability,
 	}, nil
 }
@@ -70,6 +72,10 @@ func (d *Definition) ChildOf() *ExternalID {
 
 func (d *Definition) LinkedTo() []*ExternalID {
 	return d.linkedTo
+}
+
+func (d *Definition) Events() []Event {
+	return d.events
 }
 
 func (d *Definition) FailWithProbability() float64 {

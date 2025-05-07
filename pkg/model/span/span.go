@@ -21,6 +21,7 @@ type TreeNode struct {
 	externalID           *task.ExternalID
 	children             []*TreeNode
 	linkedTo             []*TreeNode
+	events               []Event
 	linkedToExternalID   []*task.ExternalID
 	status               Status
 }
@@ -65,6 +66,19 @@ func fromTaskNode(
 	startTime := baseStartTime.Add(*delay)
 	endTime := startTime.Add(*duration)
 
+	events := make([]Event, len(taskNode.Definition().Events()))
+	for i, event := range taskNode.Definition().Events() {
+		d, err := event.Delay().Resolve(duration)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve event delay: %w", err)
+		}
+		events[i] = NewEvent(
+			event.Name(),
+			startTime.Add(*d),
+			event.Attributes(),
+		)
+	}
+
 	node := TreeNode{
 		id:                   spanID,
 		traceID:              traceID,
@@ -79,6 +93,7 @@ func fromTaskNode(
 		externalID:           taskNode.Definition().ExternalID(),
 		children:             []*TreeNode{},
 		linkedTo:             []*TreeNode{},
+		events:               events,
 		linkedToExternalID:   taskNode.Definition().LinkedTo(),
 		status:               statusGen(taskNode.Definition().FailWithProbability()),
 	}
@@ -121,6 +136,9 @@ func (n *TreeNode) validate() error {
 func (n *TreeNode) ShiftTimestamps(delta time.Duration) {
 	n.startTime = n.startTime.Add(delta)
 	n.endTime = n.endTime.Add(delta)
+	for i := range n.events {
+		n.events[i].ShiftOccurredAt(delta)
+	}
 	for _, child := range n.children {
 		child.ShiftTimestamps(delta)
 	}
@@ -213,6 +231,12 @@ func (n *TreeNode) Children() []*TreeNode {
 func (n *TreeNode) LinkedTo() []*TreeNode {
 	cp := make([]*TreeNode, len(n.linkedTo))
 	copy(cp, n.linkedTo)
+	return cp
+}
+
+func (n *TreeNode) Events() []Event {
+	cp := make([]Event, len(n.events))
+	copy(cp, n.events)
 	return cp
 }
 

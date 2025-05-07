@@ -15,6 +15,7 @@ type Task struct {
 	Children            []Task
 	ChildOf             *domainTask.ExternalID
 	LinkedTo            []*domainTask.ExternalID
+	Events              []domainTask.Event
 	FailWithProbability float64
 }
 
@@ -31,6 +32,7 @@ func (t *Task) ToRootNodeWithResource(resource *domainTask.Resource) (*domainTas
 		t.Duration,
 		t.ChildOf,
 		t.LinkedTo,
+		t.Events,
 		t.FailWithProbability,
 	)
 	if err != nil {
@@ -61,6 +63,7 @@ func (t *Task) toChildNodeWithResource(resource *domainTask.Resource) (*domainTa
 		t.Duration,
 		nil,
 		t.LinkedTo,
+		t.Events,
 		t.FailWithProbability,
 	)
 	if err != nil {

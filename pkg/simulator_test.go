@@ -45,6 +45,22 @@ func TestSimulator_Run(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(0),
 					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "server",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-a-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-a-1": "attribute-value-event-root-task-a-1",
+							},
+						),
+						task.NewEvent(
+							"event-root-task-a-2",
+							NewAbsoluteDurationDelay(100*time.Millisecond),
+							map[string]string{
+								"attribute-key-event-root-task-a-2": "attribute-value-event-root-task-a-2",
+							},
+						),
+					},
 					Attributes: map[string]string{
 						"key1": "value1",
 					},
@@ -55,6 +71,15 @@ func TestSimulator_Run(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(time.Duration(500) * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "producer",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-a1-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-a1-1": "attribute-value-event-child-task-a1-1",
+									},
+								),
+							},
 						},
 						{
 							Name:       "child-task-a2",
@@ -62,6 +87,15 @@ func TestSimulator_Run(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "internal",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-a2-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-a2-1": "attribute-value-event-child-task-a2-1",
+									},
+								),
+							},
 						},
 					},
 				},
@@ -76,6 +110,15 @@ func TestSimulator_Run(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(0),
 					Duration:   NewAbsoluteDurationDuration(1000 * time.Millisecond),
 					Kind:       "consumer",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-b-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-b-1": "attribute-value-event-root-task-b-1",
+							},
+						),
+					},
 					Children: []model.Task{
 						{
 							Name:       "child-task-b1",
@@ -83,6 +126,15 @@ func TestSimulator_Run(t *testing.T) {
 							Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
 							Duration:   NewAbsoluteDurationDuration(500 * time.Millisecond),
 							Kind:       "client",
+							Events: []task.Event{
+								task.NewEvent(
+									"event-child-task-b1-1",
+									NewAbsoluteDurationDelay(0),
+									map[string]string{
+										"attribute-key-event-child-task-b1-1": "attribute-value-event-child-task-b1-1",
+									},
+								),
+							},
 						},
 					},
 					LinkedTo: []*task.ExternalID{
@@ -101,7 +153,16 @@ func TestSimulator_Run(t *testing.T) {
 					Delay:      NewAbsoluteDurationDelay(time.Duration(1000) * time.Millisecond),
 					Duration:   NewAbsoluteDurationDuration(3000 * time.Millisecond),
 					Kind:       "internal",
-					ChildOf:    childTaskA2ExternalID,
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-c-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-c-1": "attribute-value-event-root-task-c-1",
+							},
+						),
+					},
+					ChildOf: childTaskA2ExternalID,
 				},
 			},
 		},
@@ -110,11 +171,20 @@ func TestSimulator_Run(t *testing.T) {
 			Name: "service-d",
 			Tasks: []model.Task{
 				{
-					Name:                "root-task-d",
-					ExternalID:          nil,
-					Delay:               NewAbsoluteDurationDelay(0),
-					Duration:            NewAbsoluteDurationDuration(1500 * time.Millisecond),
-					Kind:                "internal",
+					Name:       "root-task-d",
+					ExternalID: nil,
+					Delay:      NewAbsoluteDurationDelay(0),
+					Duration:   NewAbsoluteDurationDuration(1500 * time.Millisecond),
+					Kind:       "internal",
+					Events: []task.Event{
+						task.NewEvent(
+							"event-root-task-d-1",
+							NewAbsoluteDurationDelay(0),
+							map[string]string{
+								"attribute-key-event-root-task-d-1": "attribute-value-event-root-task-d-1",
+							},
+						),
+					},
 					ChildOf:             nil,
 					FailWithProbability: 1.0,
 				},
@@ -226,6 +296,45 @@ func TestSimulator_Run(t *testing.T) {
 		rootD := traces[2]
 		assert.GreaterOrEqual(t, rootD.StartTime(), expectedStartTime)
 		assert.LessOrEqual(t, rootD.EndTime(), now)
+	})
+
+	t.Run("adjust span event timestamps to ensure all events are within the span's time range", func(t *testing.T) {
+		rootA := traces[0]
+		assert.Len(t, rootA.Events(), 2)
+		assert.GreaterOrEqual(t, rootA.Events()[0].OccurredAt(), rootA.StartTime())
+		assert.LessOrEqual(t, rootA.Events()[0].OccurredAt(), now)
+		assert.GreaterOrEqual(t, rootA.Events()[1].OccurredAt(), rootA.StartTime())
+		assert.LessOrEqual(t, rootA.Events()[1].OccurredAt(), now)
+
+		childA1 := rootA.Children()[0]
+		assert.Len(t, childA1.Events(), 1)
+		assert.GreaterOrEqual(t, childA1.Events()[0].OccurredAt(), childA1.StartTime())
+		assert.LessOrEqual(t, childA1.Events()[0].OccurredAt(), now)
+
+		childA2 := rootA.Children()[1]
+		assert.Len(t, childA2.Events(), 1)
+		assert.GreaterOrEqual(t, childA2.Events()[0].OccurredAt(), childA2.StartTime())
+		assert.LessOrEqual(t, childA2.Events()[0].OccurredAt(), now)
+
+		rootC := childA2.Children()[0]
+		assert.Len(t, rootC.Events(), 1)
+		assert.GreaterOrEqual(t, rootC.Events()[0].OccurredAt(), rootC.StartTime())
+		assert.LessOrEqual(t, rootC.Events()[0].OccurredAt(), now)
+
+		rootB := traces[1]
+		assert.Len(t, rootB.Events(), 1)
+		assert.GreaterOrEqual(t, rootB.Events()[0].OccurredAt(), rootB.StartTime())
+		assert.LessOrEqual(t, rootB.Events()[0].OccurredAt(), now)
+
+		childB1 := rootB.Children()[0]
+		assert.Len(t, childB1.Events(), 1)
+		assert.GreaterOrEqual(t, childB1.Events()[0].OccurredAt(), childB1.StartTime())
+		assert.LessOrEqual(t, childB1.Events()[0].OccurredAt(), now)
+
+		rootD := traces[2]
+		assert.Len(t, rootD.Events(), 1)
+		assert.GreaterOrEqual(t, rootD.Events()[0].OccurredAt(), rootD.StartTime())
+		assert.LessOrEqual(t, rootD.Events()[0].OccurredAt(), now)
 	})
 
 	t.Run("create error spans based on the probability", func(t *testing.T) {
