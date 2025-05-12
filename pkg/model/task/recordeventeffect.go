@@ -1,5 +1,6 @@
 package task
 
+// RecordEventEffect represents an effect that records an event.
 type RecordEventEffect struct {
 	event Event
 }

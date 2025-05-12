@@ -7,6 +7,7 @@ import (
 
 var _ Effect = (*RecordEventEffect)(nil)
 
+// RecordEventEffect is an effect that records an event at a specific time.
 type RecordEventEffect struct {
 	event task.Event
 }
