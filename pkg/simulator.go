@@ -34,7 +34,7 @@ func (s *Simulator[T]) Run(blueprint blueprint.Blueprint, baseEndTime time.Time)
 	externalIDToSpan := make(map[task.ExternalID]*span.TreeNode)
 	for _, taskTree := range traceRootTaskNodes {
 		traceID := generateTraceID()
-		rootSpan, err := span.FromTaskTree(taskTree, traceID, baseEndTime, generateSpanID, generateSpanStatus)
+		rootSpan, err := span.FromTaskTree(taskTree, traceID, baseEndTime, generateSpanID, mathRand.Float64)
 		if err != nil {
 			return zero, fmt.Errorf("failed to construct span tree: %w", err)
 		}
@@ -96,14 +96,4 @@ func generateSpanID() span.ID {
 	var id [8]byte
 	_, _ = rand.Read(id[:])
 	return span.NewSpanID(id)
-}
-
-func generateSpanStatus(prob float64) span.Status {
-	if prob <= 0 {
-		return span.StatusOK
-	}
-	if mathRand.Float64() < prob {
-		return span.StatusError
-	}
-	return span.StatusOK
 }

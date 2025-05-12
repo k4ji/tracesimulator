@@ -32,9 +32,9 @@ func FromTaskTree(
 	traceID TraceID,
 	baseStartTime time.Time,
 	idGen func() ID,
-	statusGen func(prob float64) Status,
+	randGen func() float64,
 ) (*TreeNode, error) {
-	rootSpan, err := fromTaskNode(taskTree, traceID, nil, nil, baseStartTime, idGen, statusGen)
+	rootSpan, err := fromTaskNode(taskTree, traceID, nil, nil, baseStartTime, idGen, randGen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert task tree to span tree: %w", err)
 	}
@@ -51,7 +51,7 @@ func fromTaskNode(
 	parentDuration *time.Duration,
 	baseStartTime time.Time,
 	idGen func() ID,
-	statusGen func(prob float64) Status,
+	randGen func() float64,
 ) (*TreeNode, error) {
 	spanID := idGen()
 	delay, err := taskNode.Definition().Delay().Resolve(parentDuration)
@@ -98,15 +98,36 @@ func fromTaskNode(
 		linkedTo:             []*TreeNode{},
 		events:               events,
 		linkedToExternalID:   taskNode.Definition().LinkedTo(),
-		status:               statusGen(taskNode.Definition().FailWithProbability()),
+		status:               StatusOK,
 	}
 
 	for _, childTask := range taskNode.Children() {
-		childSpan, err := fromTaskNode(childTask, traceID, &spanID, duration, startTime, idGen, statusGen)
+		childSpan, err := fromTaskNode(childTask, traceID, &spanID, duration, startTime, idGen, randGen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert child task to span: %w", err)
 		}
 		node.children = append(node.children, childSpan)
+	}
+
+	for _, spec := range taskNode.Definition().ConditionalDefinitions() {
+		condition, err := FromConditionSpec(spec.Condition())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert condition spec to condition: %w", err)
+		}
+		if condition.Evaluate(EvaluationContext{
+			randomness: randGen,
+			node:       &node,
+		}) {
+			for _, effectSpec := range spec.Effects() {
+				effect, err := FromEffectSpec(effectSpec)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert effect spec to effect: %w", err)
+				}
+				if err := effect.Apply(&node); err != nil {
+					return nil, fmt.Errorf("failed to apply effect: %w", err)
+				}
+			}
+		}
 	}
 
 	return &node, nil

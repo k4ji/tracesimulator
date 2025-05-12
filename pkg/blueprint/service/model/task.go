@@ -6,17 +6,17 @@ import (
 
 // Task represents an operation that can be performed by a service
 type Task struct {
-	Name                string
-	ExternalID          *domainTask.ExternalID
-	Delay               domainTask.Delay
-	Duration            domainTask.Duration
-	Kind                string
-	Attributes          map[string]string
-	Children            []Task
-	ChildOf             *domainTask.ExternalID
-	LinkedTo            []*domainTask.ExternalID
-	Events              []domainTask.Event
-	FailWithProbability float64
+	Name                  string
+	ExternalID            *domainTask.ExternalID
+	Delay                 domainTask.Delay
+	Duration              domainTask.Duration
+	Kind                  string
+	Attributes            map[string]string
+	Children              []Task
+	ChildOf               *domainTask.ExternalID
+	LinkedTo              []*domainTask.ExternalID
+	Events                []domainTask.Event
+	ConditionalDefinition []*domainTask.ConditionalDefinition
 }
 
 // ToRootNodeWithResource converts the Task to a root node with the given resource
@@ -33,7 +33,7 @@ func (t *Task) ToRootNodeWithResource(resource *domainTask.Resource) (*domainTas
 		t.ChildOf,
 		t.LinkedTo,
 		t.Events,
-		t.FailWithProbability,
+		t.ConditionalDefinition,
 	)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (t *Task) toChildNodeWithResource(resource *domainTask.Resource) (*domainTa
 		nil,
 		t.LinkedTo,
 		t.Events,
-		t.FailWithProbability,
+		t.ConditionalDefinition,
 	)
 	if err != nil {
 		return nil, err

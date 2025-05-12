@@ -16,7 +16,7 @@ func TestFromTaskTree(t *testing.T) {
 		traceID     TraceID
 		baseEndTime time.Time
 		idGen       func() ID
-		statusGen   func(prob float64) Status
+		randGen     func() float64
 		expected    *TreeNode
 	}
 
@@ -46,15 +46,21 @@ func TestFromTaskTree(t *testing.T) {
 								make(map[string]string),
 							),
 						},
-						0.0,
-					)
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(1.0),
+								[]task.Effect{
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+								},
+							),
+						})
 					return def
 				}(),
 			),
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			statusGen:   func(prob float64) Status { return StatusOK },
+			randGen:     func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -93,7 +99,7 @@ func TestFromTaskTree(t *testing.T) {
 							nil,
 							[]*task.ExternalID{},
 							[]task.Event{},
-							0.0,
+							[]*task.ConditionalDefinition{},
 						)
 						return def
 					}(),
@@ -114,7 +120,7 @@ func TestFromTaskTree(t *testing.T) {
 								nil,
 								[]*task.ExternalID{},
 								[]task.Event{},
-								0.0,
+								[]*task.ConditionalDefinition{},
 							)
 							return def
 						}(),
@@ -136,7 +142,7 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			statusGen: func(prob float64) Status { return StatusOK },
+			randGen: func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -190,7 +196,7 @@ func TestFromTaskTree(t *testing.T) {
 							nil,
 							[]*task.ExternalID{},
 							[]task.Event{},
-							0.0,
+							[]*task.ConditionalDefinition{},
 						)
 						return def
 					}(),
@@ -211,7 +217,7 @@ func TestFromTaskTree(t *testing.T) {
 								nil,
 								[]*task.ExternalID{},
 								[]task.Event{},
-								0.0,
+								[]*task.ConditionalDefinition{},
 							)
 							return def
 						}(),
@@ -233,7 +239,7 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			statusGen: func(prob float64) Status { return StatusOK },
+			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -287,7 +293,7 @@ func TestFromTaskTree(t *testing.T) {
 							nil,
 							[]*task.ExternalID{},
 							[]task.Event{},
-							0.0,
+							[]*task.ConditionalDefinition{},
 						)
 						return def
 					}(),
@@ -308,7 +314,7 @@ func TestFromTaskTree(t *testing.T) {
 								nil,
 								[]*task.ExternalID{},
 								[]task.Event{},
-								0.0,
+								[]*task.ConditionalDefinition{},
 							)
 							return def
 						}(),
@@ -330,7 +336,7 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			statusGen: func(prob float64) Status { return StatusOK },
+			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -390,7 +396,7 @@ func TestFromTaskTree(t *testing.T) {
 									make(map[string]string),
 								),
 							},
-							0.0,
+							[]*task.ConditionalDefinition{},
 						)
 						return def
 					}(),
@@ -417,7 +423,7 @@ func TestFromTaskTree(t *testing.T) {
 										make(map[string]string),
 									),
 								},
-								0.0,
+								[]*task.ConditionalDefinition{},
 							)
 							return def
 						}(),
@@ -439,7 +445,7 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			statusGen: func(prob float64) Status { return StatusOK },
+			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -497,7 +503,7 @@ func TestFromTaskTree(t *testing.T) {
 							nil,
 							[]*task.ExternalID{},
 							[]task.Event{},
-							0.0,
+							[]*task.ConditionalDefinition{},
 						)
 						return def
 					}(),
@@ -518,7 +524,7 @@ func TestFromTaskTree(t *testing.T) {
 								nil,
 								[]*task.ExternalID{},
 								[]task.Event{},
-								0.0,
+								[]*task.ConditionalDefinition{},
 							)
 							return def
 						}(),
@@ -540,7 +546,7 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			statusGen: func(prob float64) Status { return StatusOK },
+			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -593,7 +599,14 @@ func TestFromTaskTree(t *testing.T) {
 						nil,
 						[]*task.ExternalID{},
 						[]task.Event{},
-						0.5,
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(0.5),
+								[]task.Effect{
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+								},
+							),
+						},
 					)
 					return def
 				}(),
@@ -601,12 +614,7 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			statusGen: func(prob float64) Status {
-				if prob > 0 {
-					return StatusError
-				}
-				return StatusOK
-			},
+			randGen:     func() float64 { return 0.4 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -628,7 +636,7 @@ func TestFromTaskTree(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen, tc.statusGen)
+			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen, tc.randGen)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, span)
 		})
@@ -659,7 +667,7 @@ func TestFromTaskTreeError(t *testing.T) {
 						nil,
 						[]*task.ExternalID{},
 						[]task.Event{},
-						0.0,
+						[]*task.ConditionalDefinition{},
 					)
 					return def
 				}(),
@@ -688,7 +696,7 @@ func TestFromTaskTreeError(t *testing.T) {
 								make(map[string]string),
 							),
 						},
-						0.0,
+						[]*task.ConditionalDefinition{},
 					)
 					return def
 				}(),
@@ -699,7 +707,7 @@ func TestFromTaskTreeError(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) }, func(prob float64) Status { return StatusOK })
+			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) }, func() float64 { return 1.0 })
 			assert.Error(t, err)
 		})
 	}

@@ -37,7 +37,14 @@ func TestBlueprint_Interpret(t *testing.T) {
 								Attributes: map[string]string{
 									"key2": "value2",
 								},
-								FailWithProbability: 0.1,
+								ConditionalDefinition: []*task.ConditionalDefinition{
+									task.NewConditionalDefinition(
+										task.NewProbabilisticCondition(0.1),
+										[]task.Effect{
+											task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+										},
+									),
+								},
 							},
 						},
 					},
@@ -75,7 +82,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, map[string]string{"key1": "value1"}, rootTaskNodes[0].Definition().Attributes())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[0].Definition().Delay())
 		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(1000)*time.Millisecond), rootTaskNodes[0].Definition().Duration())
-		assert.Equal(t, 0.0, rootTaskNodes[0].Definition().FailWithProbability())
+		assert.Len(t, rootTaskNodes[0].Definition().ConditionalDefinitions(), 0)
 
 		assert.Equal(t, "task-a1-child", rootTaskNodes[0].Children()[0].Definition().Name())
 		assert.Equal(t, "service-a", rootTaskNodes[0].Children()[0].Definition().Resource().Name())
@@ -84,7 +91,8 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, map[string]string{"key2": "value2"}, rootTaskNodes[0].Children()[0].Definition().Attributes())
 		assert.Equal(t, NewAbsoluteDurationDelay(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Delay())
 		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(500)*time.Millisecond), rootTaskNodes[0].Children()[0].Definition().Duration())
-		assert.Equal(t, 0.1, rootTaskNodes[0].Children()[0].Definition().FailWithProbability())
+		assert.Equal(t, 0.1, rootTaskNodes[0].Children()[0].Definition().ConditionalDefinitions()[0].Condition().Probabilistic().Threshold())
+		assert.NotNil(t, rootTaskNodes[0].Children()[0].Definition().ConditionalDefinitions()[0].Effects()[0].MarkAsFailedEffect())
 
 		assert.Equal(t, "task-a2", rootTaskNodes[1].Definition().Name())
 		assert.Equal(t, "service-a", rootTaskNodes[1].Definition().Resource().Name())
@@ -92,14 +100,14 @@ func TestBlueprint_Interpret(t *testing.T) {
 		assert.Equal(t, task.KindInternal, rootTaskNodes[1].Definition().Kind())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[1].Definition().Delay())
 		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(100)*time.Millisecond), rootTaskNodes[1].Definition().Duration())
-		assert.Equal(t, 0.0, rootTaskNodes[1].Definition().FailWithProbability())
+		assert.Len(t, rootTaskNodes[1].Definition().ConditionalDefinitions(), 0)
 
 		assert.Equal(t, "task-b1", rootTaskNodes[2].Definition().Name())
 		assert.Equal(t, "service-b", rootTaskNodes[2].Definition().Resource().Name())
 		assert.Equal(t, task.KindInternal, rootTaskNodes[2].Definition().Kind())
 		assert.Equal(t, NewAbsoluteDurationDelay(0), rootTaskNodes[2].Definition().Delay())
 		assert.Equal(t, NewAbsoluteDurationDuration(time.Duration(2000)*time.Millisecond), rootTaskNodes[2].Definition().Duration())
-		assert.Equal(t, 0.0, rootTaskNodes[2].Definition().FailWithProbability())
+		assert.Len(t, rootTaskNodes[2].Definition().ConditionalDefinitions(), 0)
 	})
 
 	t.Run("connect task nodes across services based on parent-child relationships", func(t *testing.T) {

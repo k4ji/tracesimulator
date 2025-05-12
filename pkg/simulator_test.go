@@ -185,8 +185,15 @@ func TestSimulator_Run(t *testing.T) {
 							},
 						),
 					},
-					ChildOf:             nil,
-					FailWithProbability: 1.0,
+					ChildOf: nil,
+					ConditionalDefinition: []*task.ConditionalDefinition{
+						task.NewConditionalDefinition(
+							task.NewProbabilisticCondition(1.0),
+							[]task.Effect{
+								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+							},
+						),
+					},
 				},
 			},
 		},

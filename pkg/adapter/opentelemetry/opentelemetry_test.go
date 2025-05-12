@@ -204,10 +204,17 @@ func TestAdapter_Transform(t *testing.T) {
 							},
 						),
 					},
-					ChildOf:             childTaskA2ExternalID,
-					FailWithProbability: 1.0,
+					ChildOf: childTaskA2ExternalID,
 					Attributes: map[string]string{
 						"attribute-key-root-task-d": "attribute-value-root-task-d",
+					},
+					ConditionalDefinition: []*task.ConditionalDefinition{
+						task.NewConditionalDefinition(
+							task.NewProbabilisticCondition(1.0),
+							[]task.Effect{
+								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+							},
+						),
 					},
 				},
 			},

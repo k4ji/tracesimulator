@@ -2,35 +2,35 @@ package task
 
 // Definition represents a task in the trace
 type Definition struct {
-	name                 string
-	isResourceEntryPoint bool
-	resource             *Resource
-	attributes           map[string]string
-	kind                 Kind
-	externalID           *ExternalID
-	delay                Delay         // Relative time from the start of the parent task
-	duration             Duration      // Relative time from the start of the parent task
-	childOf              *ExternalID   // ID of the parent task (if any)
-	linkedTo             []*ExternalID // IDs of linked spans (for producer/consumer relationships)
-	events               []Event       // Events associated with the task
-	failWithProbability  float64       // Probability of error
+	name                   string
+	isResourceEntryPoint   bool
+	resource               *Resource
+	attributes             map[string]string
+	kind                   Kind
+	externalID             *ExternalID
+	delay                  Delay                    // Relative time from the start of the parent task
+	duration               Duration                 // Relative time from the start of the parent task
+	childOf                *ExternalID              // ID of the parent task (if any)
+	linkedTo               []*ExternalID            // IDs of linked spans (for producer/consumer relationships)
+	events                 []Event                  // Events associated with the task
+	conditionalDefinitions []*ConditionalDefinition // Conditional definitions for the task
 }
 
 // NewDefinition creates a new task definition
-func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration Duration, childOf *ExternalID, linkedTo []*ExternalID, events []Event, failWithProbability float64) (*Definition, error) {
+func NewDefinition(name string, isResourceEntryPoint bool, resource *Resource, attributes map[string]string, kind Kind, externalID *ExternalID, delay Delay, duration Duration, childOf *ExternalID, linkedTo []*ExternalID, events []Event, conditionaldefinitions []*ConditionalDefinition) (*Definition, error) {
 	return &Definition{
-		name:                 name,
-		isResourceEntryPoint: isResourceEntryPoint,
-		resource:             resource,
-		attributes:           attributes,
-		kind:                 kind,
-		externalID:           externalID,
-		delay:                delay,
-		duration:             duration,
-		childOf:              childOf,
-		linkedTo:             linkedTo,
-		events:               events,
-		failWithProbability:  failWithProbability,
+		name:                   name,
+		isResourceEntryPoint:   isResourceEntryPoint,
+		resource:               resource,
+		attributes:             attributes,
+		kind:                   kind,
+		externalID:             externalID,
+		delay:                  delay,
+		duration:               duration,
+		childOf:                childOf,
+		linkedTo:               linkedTo,
+		events:                 events,
+		conditionalDefinitions: conditionaldefinitions,
 	}, nil
 }
 
@@ -78,6 +78,6 @@ func (d *Definition) Events() []Event {
 	return d.events
 }
 
-func (d *Definition) FailWithProbability() float64 {
-	return d.failWithProbability
+func (d *Definition) ConditionalDefinitions() []*ConditionalDefinition {
+	return d.conditionalDefinitions
 }
