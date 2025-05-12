@@ -632,6 +632,118 @@ func TestFromTaskTree(t *testing.T) {
 				children:             []*TreeNode{},
 			},
 		},
+		{
+			name: "record events based on probability",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(1*time.Second),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{},
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(0.5),
+								[]task.Effect{
+									task.FromRecordEventEffect(task.NewRecordEventEffect(
+										task.NewEvent(
+											"event-name",
+											NewAbsoluteDurationDelay(1*time.Second),
+											map[string]string{"key": "value"},
+										),
+									)),
+								},
+							),
+						},
+					)
+					return def
+				}(),
+			),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
+			randGen:     func() float64 { return 0.4 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusOK,
+				linkedTo:             []*TreeNode{},
+				events: []Event{
+					NewEvent("event-name", baseTime.Add(2*time.Second), map[string]string{"key": "value"}),
+				},
+				linkedToExternalID: []*task.ExternalID{},
+				children:           []*TreeNode{},
+			},
+		},
+		{
+			name: "not record events based on probability",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(1*time.Second),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{},
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(0.5),
+								[]task.Effect{
+									task.FromRecordEventEffect(task.NewRecordEventEffect(
+										task.NewEvent(
+											"event-name",
+											NewAbsoluteDurationDelay(1*time.Second),
+											map[string]string{"key": "value"},
+										),
+									)),
+								},
+							),
+						},
+					)
+					return def
+				}(),
+			),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
+			randGen:     func() float64 { return 0.6 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusOK,
+				linkedTo:             []*TreeNode{},
+				events:               []Event{},
+				linkedToExternalID:   []*task.ExternalID{},
+				children:             []*TreeNode{},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
