@@ -50,7 +50,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.NewConditionalDefinition(
 								task.NewProbabilisticCondition(1.0),
 								[]task.Effect{
-									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
 							),
 						})
@@ -603,7 +603,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.NewConditionalDefinition(
 								task.NewProbabilisticCondition(0.5),
 								[]task.Effect{
-									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
 							),
 						},
@@ -625,7 +625,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           make(map[string]string),
 				startTime:            baseTime.Add(1 * time.Second),
 				endTime:              baseTime.Add(3 * time.Second),
-				status:               StatusError,
+				status:               StatusError(ptrString("error")),
 				linkedTo:             []*TreeNode{},
 				events:               []Event{},
 				linkedToExternalID:   []*task.ExternalID{},
@@ -764,7 +764,7 @@ func TestFromTaskTree(t *testing.T) {
 							task.NewConditionalDefinition(
 								task.NewProbabilisticCondition(1.0),
 								[]task.Effect{
-									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
 										task.NewEvent(
 											"event-name",
@@ -793,7 +793,7 @@ func TestFromTaskTree(t *testing.T) {
 				attributes:           make(map[string]string),
 				startTime:            baseTime.Add(1 * time.Second),
 				endTime:              baseTime.Add(3 * time.Second),
-				status:               StatusError,
+				status:               StatusError(ptrString("error")),
 				linkedTo:             []*TreeNode{},
 				events: []Event{
 					NewEvent("event-name", baseTime.Add(2*time.Second), map[string]string{"key": "value"}),
@@ -931,4 +931,8 @@ func NewRelativeDurationDuration(v float64) task.Duration {
 	e, _ := taskduration.NewRelativeDuration(v)
 	d, _ := task.NewDuration(e)
 	return *d
+}
+
+func ptrString(s string) *string {
+	return &s
 }

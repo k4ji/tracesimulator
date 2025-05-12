@@ -212,7 +212,7 @@ func TestAdapter_Transform(t *testing.T) {
 						task.NewConditionalDefinition(
 							task.NewProbabilisticCondition(1.0),
 							[]task.Effect{
-								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 							},
 						),
 					},
@@ -566,7 +566,7 @@ func TestAdapter_Transform(t *testing.T) {
 		}
 	})
 
-	t.Run("status is kept", func(t *testing.T) {
+	t.Run("status code is kept", func(t *testing.T) {
 		expectedStatuses := map[string]ptrace.StatusCode{
 			"root-task-a":   ptrace.StatusCodeUnset,
 			"child-task-a1": ptrace.StatusCodeUnset,
@@ -587,6 +587,28 @@ func TestAdapter_Transform(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("status message is kept", func(t *testing.T) {
+		expectedStatuses := map[string]string{
+			"root-task-a":   "",
+			"child-task-a1": "",
+			"child-task-a2": "",
+			"root-task-b":   "",
+			"child-task-b1": "",
+			"root-task-c":   "",
+			"root-task-d":   "error",
+		}
+
+		for spanName, expectedStatus := range expectedStatuses {
+			span, spanExists := spanMap[spanName]
+			assert.True(t, spanExists, "Span not found: %s", spanName)
+
+			if spanExists {
+				actualStatus := span.Status().Message()
+				assert.Equal(t, expectedStatus, actualStatus, "Unexpected status message for span: %s", spanName)
+			}
+		}
+	})
 }
 
 func NewAbsoluteDurationDelay(duration time.Duration) task.Delay {
@@ -599,4 +621,8 @@ func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
 	e, _ := taskduration.NewAbsoluteDuration(duration)
 	d, _ := task.NewDuration(e)
 	return *d
+}
+
+func ptrString(s string) *string {
+	return &s
 }

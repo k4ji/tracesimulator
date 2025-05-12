@@ -15,7 +15,7 @@ type Effect interface {
 func FromEffectSpec(spec task.Effect) (Effect, error) {
 	switch spec.Kind() {
 	case task.EffectKindMarkAsFailed:
-		return &MarkAsFailedEffect{}, nil
+		return NewMarkAsFailedEffect(spec.MarkAsFailedEffect().Message()), nil
 	case task.EffectKindRecordEvent:
 		if spec.RecordEventEffect() == nil {
 			return nil, fmt.Errorf("record event effect is nil")

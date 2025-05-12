@@ -1,27 +1,54 @@
 package span
 
-type Status uint8
+type StatusCode uint8
 
 const (
-	StatusUnset Status = iota
-	StatusOK
-	StatusError
+	StatusCodeUnset StatusCode = iota
+	StatusCodeOK
+	StatusCodeError
 )
 
-const StatusUnsetString = "unset"
-const StatusOKString = "ok"
-const StatusErrorString = "error"
-const StatusUnknownString = "unknown"
+const StatusCodeUnsetString = "unset"
+const StatusCodeOKString = "ok"
+const StatusCodeErrorString = "error"
+const StatusCodeUnknownString = "unknown"
 
-func (s Status) String() string {
+func (s StatusCode) String() string {
 	switch s {
-	case StatusUnset:
-		return StatusUnsetString
-	case StatusOK:
-		return StatusOKString
-	case StatusError:
-		return StatusErrorString
+	case StatusCodeUnset:
+		return StatusCodeUnsetString
+	case StatusCodeOK:
+		return StatusCodeOKString
+	case StatusCodeError:
+		return StatusCodeErrorString
 	default:
-		return StatusUnknownString
+		return StatusCodeUnknownString
 	}
+}
+
+var (
+	StatusOK    = NewStatus(StatusCodeOK, nil)
+	StatusUnset = NewStatus(StatusCodeUnset, nil)
+	StatusError = func(msg *string) Status { return NewStatus(StatusCodeError, msg) }
+)
+
+// Status represents the status of a span
+type Status struct {
+	code    StatusCode
+	message *string
+}
+
+func NewStatus(code StatusCode, message *string) Status {
+	return Status{
+		code:    code,
+		message: message,
+	}
+}
+
+func (s *Status) Code() StatusCode {
+	return s.code
+}
+
+func (s *Status) Message() *string {
+	return s.message
 }

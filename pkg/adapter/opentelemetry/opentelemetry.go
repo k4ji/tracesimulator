@@ -79,7 +79,7 @@ func (a *Adapter) addSpanToScope(scopeSpans ptrace.ScopeSpans, node *span.TreeNo
 	otelSpan.SetKind(toOtelKind(node.Kind()))
 	otelSpan.SetStartTimestamp(pcommon.NewTimestampFromTime(node.StartTime()))
 	otelSpan.SetEndTimestamp(pcommon.NewTimestampFromTime(node.EndTime()))
-	otelSpan.Status().SetCode(toOtelStatusCode(node.Status()))
+	setOtelStatusCode(&otelSpan, node.Status())
 
 	for _, event := range node.Events() {
 		otelEvent := otelSpan.Events().AppendEmpty()
@@ -122,13 +122,16 @@ func toOtelKind(kind span.Kind) ptrace.SpanKind {
 	}
 }
 
-func toOtelStatusCode(code span.Status) ptrace.StatusCode {
-	switch code {
-	case span.StatusOK:
-		return ptrace.StatusCodeUnset
-	case span.StatusError:
-		return ptrace.StatusCodeError
+func setOtelStatusCode(otelSpan *ptrace.Span, status span.Status) {
+	switch status.Code() {
+	case span.StatusCodeOK:
+		otelSpan.Status().SetCode(ptrace.StatusCodeUnset)
+	case span.StatusCodeError:
+		otelSpan.Status().SetCode(ptrace.StatusCodeError)
+		if status.Message() != nil {
+			otelSpan.Status().SetMessage(*status.Message())
+		}
 	default:
-		return ptrace.StatusCodeUnset
+		otelSpan.Status().SetCode(ptrace.StatusCodeUnset)
 	}
 }

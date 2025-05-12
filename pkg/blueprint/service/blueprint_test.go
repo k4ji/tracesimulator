@@ -41,7 +41,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 									task.NewConditionalDefinition(
 										task.NewProbabilisticCondition(0.1),
 										[]task.Effect{
-											task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect("error")),
+											task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 										},
 									),
 								},
@@ -335,4 +335,8 @@ func NewAbsoluteDurationDuration(duration time.Duration) task.Duration {
 	e, _ := taskduration.NewAbsoluteDuration(duration)
 	d, _ := task.NewDuration(e)
 	return *d
+}
+
+func ptrString(s string) *string {
+	return &s
 }
