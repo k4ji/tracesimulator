@@ -584,55 +584,6 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
-			name: "generate error spans based on fail probability",
-			taskTree: task.NewTreeNode(
-				func() *task.Definition {
-					def, _ := task.NewDefinition(
-						"root-task",
-						true,
-						task.NewResource("service-a", make(map[string]string)),
-						make(map[string]string),
-						task.KindInternal,
-						nil,
-						NewAbsoluteDurationDelay(1*time.Second),
-						NewAbsoluteDurationDuration(2*time.Second),
-						nil,
-						[]*task.ExternalID{},
-						[]task.Event{},
-						[]*task.ConditionalDefinition{
-							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
-								[]task.Effect{
-									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
-								},
-							),
-						},
-					)
-					return def
-				}(),
-			),
-			traceID:     traceID,
-			baseEndTime: baseTime,
-			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.4 },
-			expected: &TreeNode{
-				id:                   NewSpanID([8]byte{0x01}),
-				traceID:              traceID,
-				name:                 "root-task",
-				isResourceEntryPoint: true,
-				kind:                 KindInternal,
-				resource:             task.NewResource("service-a", make(map[string]string)),
-				attributes:           make(map[string]string),
-				startTime:            baseTime.Add(1 * time.Second),
-				endTime:              baseTime.Add(3 * time.Second),
-				status:               StatusError(ptrString("error")),
-				linkedTo:             []*TreeNode{},
-				events:               []Event{},
-				linkedToExternalID:   []*task.ExternalID{},
-				children:             []*TreeNode{},
-			},
-		},
-		{
 			name: "record events based on probability",
 			taskTree: task.NewTreeNode(
 				func() *task.Definition {
@@ -735,6 +686,106 @@ func TestFromTaskTree(t *testing.T) {
 				kind:                 KindInternal,
 				resource:             task.NewResource("service-a", make(map[string]string)),
 				attributes:           make(map[string]string),
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusOK,
+				linkedTo:             []*TreeNode{},
+				events:               []Event{},
+				linkedToExternalID:   []*task.ExternalID{},
+				children:             []*TreeNode{},
+			},
+		},
+		{
+			name: "generate error spans",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(1*time.Second),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{},
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(0.5),
+								[]task.Effect{
+									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
+								},
+							),
+						},
+					)
+					return def
+				}(),
+			),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
+			randGen:     func() float64 { return 0.4 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusError(ptrString("error")),
+				linkedTo:             []*TreeNode{},
+				events:               []Event{},
+				linkedToExternalID:   []*task.ExternalID{},
+				children:             []*TreeNode{},
+			},
+		},
+		{
+			name: "annotate span",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						make(map[string]string),
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(1*time.Second),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{},
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(1.0),
+								[]task.Effect{
+									task.FromAnnotateEffect(task.NewAnnotateEffect(
+										map[string]string{"key": "value"},
+									)),
+								},
+							),
+						},
+					)
+					return def
+				}(),
+			),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
+			randGen:     func() float64 { return 0.0 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           map[string]string{"key": "value"},
 				startTime:            baseTime.Add(1 * time.Second),
 				endTime:              baseTime.Add(3 * time.Second),
 				status:               StatusOK,

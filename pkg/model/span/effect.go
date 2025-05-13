@@ -25,6 +25,11 @@ func FromEffectSpec(spec task.Effect) (Effect, error) {
 			return nil, fmt.Errorf("failed to convert record event effect: %w", err)
 		}
 		return eff, nil
+	case task.EffectKindAnnotate:
+		if spec.AnnotateEffect() == nil {
+			return nil, fmt.Errorf("annotate effect is nil")
+		}
+		return FromTaskAnnotateEffect(*spec.AnnotateEffect()), nil
 	default:
 		return nil, fmt.Errorf("unknown effect type: %s", spec.Kind())
 	}

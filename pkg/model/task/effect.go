@@ -6,12 +6,14 @@ type EffectKind string
 const (
 	EffectKindMarkAsFailed EffectKind = "markAsFailed"
 	EffectKindRecordEvent  EffectKind = "recordEvent"
+	EffectKindAnnotate     EffectKind = "annotate"
 )
 
 type Effect struct {
 	kind         EffectKind
 	markAsFailed *MarkAsFailedEffect
 	recordEvent  *RecordEventEffect
+	annotate     *AnnotateEffect
 }
 
 func FromMarkAsFailedEffect(markAsFailed MarkAsFailedEffect) Effect {
@@ -28,6 +30,13 @@ func FromRecordEventEffect(recordEvent RecordEventEffect) Effect {
 	}
 }
 
+func FromAnnotateEffect(annotate AnnotateEffect) Effect {
+	return Effect{
+		kind:     EffectKindAnnotate,
+		annotate: &annotate,
+	}
+}
+
 func (e *Effect) Kind() EffectKind {
 	return e.kind
 }
@@ -38,4 +47,8 @@ func (e *Effect) MarkAsFailedEffect() *MarkAsFailedEffect {
 
 func (e *Effect) RecordEventEffect() *RecordEventEffect {
 	return e.recordEvent
+}
+
+func (e *Effect) AnnotateEffect() *AnnotateEffect {
+	return e.annotate
 }
