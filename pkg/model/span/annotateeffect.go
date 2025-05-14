@@ -8,6 +8,9 @@ type AnnotateEffect struct {
 }
 
 func (a AnnotateEffect) Apply(node *TreeNode) error {
+	if node.attributes == nil {
+		node.attributes = make(map[string]string)
+	}
 	for k, v := range a.attributes {
 		node.attributes[k] = v
 	}

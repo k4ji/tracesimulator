@@ -745,14 +745,65 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
-			name: "annotate span",
+			name: "annotate span with attributes",
 			taskTree: task.NewTreeNode(
 				func() *task.Definition {
 					def, _ := task.NewDefinition(
 						"root-task",
 						true,
 						task.NewResource("service-a", make(map[string]string)),
-						make(map[string]string),
+						map[string]string{"key1": "val1"},
+						task.KindInternal,
+						nil,
+						NewAbsoluteDurationDelay(1*time.Second),
+						NewAbsoluteDurationDuration(2*time.Second),
+						nil,
+						[]*task.ExternalID{},
+						[]task.Event{},
+						[]*task.ConditionalDefinition{
+							task.NewConditionalDefinition(
+								task.NewProbabilisticCondition(1.0),
+								[]task.Effect{
+									task.FromAnnotateEffect(task.NewAnnotateEffect(
+										map[string]string{"key2": "val2"},
+									)),
+								},
+							),
+						},
+					)
+					return def
+				}(),
+			),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
+			randGen:     func() float64 { return 0.0 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           map[string]string{"key1": "val1", "key2": "val2"},
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusOK,
+				linkedTo:             []*TreeNode{},
+				events:               []Event{},
+				linkedToExternalID:   []*task.ExternalID{},
+				children:             []*TreeNode{},
+			},
+		},
+		{
+			name: "annotate span without attributes",
+			taskTree: task.NewTreeNode(
+				func() *task.Definition {
+					def, _ := task.NewDefinition(
+						"root-task",
+						true,
+						task.NewResource("service-a", make(map[string]string)),
+						nil,
 						task.KindInternal,
 						nil,
 						NewAbsoluteDurationDelay(1*time.Second),
