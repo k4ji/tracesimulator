@@ -7,6 +7,7 @@ const (
 	EffectKindMarkAsFailed EffectKind = "markAsFailed"
 	EffectKindRecordEvent  EffectKind = "recordEvent"
 	EffectKindAnnotate     EffectKind = "annotate"
+	EffectKindDropChildren EffectKind = "dropChildren"
 )
 
 type Effect struct {
@@ -14,6 +15,7 @@ type Effect struct {
 	markAsFailed *MarkAsFailedEffect
 	recordEvent  *RecordEventEffect
 	annotate     *AnnotateEffect
+	dropChildren *DropChildrenEffect
 }
 
 func FromMarkAsFailedEffect(markAsFailed MarkAsFailedEffect) Effect {
@@ -37,6 +39,13 @@ func FromAnnotateEffect(annotate AnnotateEffect) Effect {
 	}
 }
 
+func FromDropChildrenEffect(dropChildren DropChildrenEffect) Effect {
+	return Effect{
+		kind:         EffectKindDropChildren,
+		dropChildren: &dropChildren,
+	}
+}
+
 func (e *Effect) Kind() EffectKind {
 	return e.kind
 }
@@ -51,4 +60,8 @@ func (e *Effect) RecordEventEffect() *RecordEventEffect {
 
 func (e *Effect) AnnotateEffect() *AnnotateEffect {
 	return e.annotate
+}
+
+func (e *Effect) DropChildrenEffect() *DropChildrenEffect {
+	return e.dropChildren
 }

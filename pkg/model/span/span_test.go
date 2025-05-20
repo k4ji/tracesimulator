@@ -847,6 +847,91 @@ func TestFromTaskTree(t *testing.T) {
 			},
 		},
 		{
+			name: "drop child spans",
+			taskTree: func() *task.TreeNode {
+				root := task.NewTreeNode(
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationDelay(1*time.Second),
+							NewAbsoluteDurationDuration(2*time.Second),
+							nil,
+							[]*task.ExternalID{},
+							[]task.Event{},
+							[]*task.ConditionalDefinition{
+								task.NewConditionalDefinition(
+									task.NewProbabilisticCondition(1.0),
+									[]task.Effect{
+										task.FromDropChildrenEffect(task.NewDropChildrenEffect()),
+									},
+								),
+							},
+						)
+						return def
+					}(),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								make(map[string]string),
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationDelay(3*time.Second),
+								NewAbsoluteDurationDuration(4*time.Second),
+								nil,
+								[]*task.ExternalID{},
+								[]task.Event{},
+								[]*task.ConditionalDefinition{},
+							)
+							return def
+						}(),
+					),
+				)
+				return root
+			}(),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen: func() func() ID {
+				ids := [][8]byte{
+					{0x01}, // ID for the root span
+					{0x02}, // ID for the child span
+				}
+				index := 0
+				return func() ID {
+					id := NewSpanID(ids[index])
+					index++
+					return id
+				}
+			}(),
+			randGen: func() float64 { return 0.0 },
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime.Add(1 * time.Second),
+				endTime:              baseTime.Add(3 * time.Second),
+				status:               StatusOK,
+				linkedTo:             []*TreeNode{},
+				events:               []Event{},
+				linkedToExternalID:   []*task.ExternalID{},
+				children:             []*TreeNode{},
+			},
+		},
+		{
 			name: "apply multiple effects",
 			taskTree: task.NewTreeNode(
 				func() *task.Definition {
