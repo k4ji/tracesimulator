@@ -30,11 +30,6 @@ func FromEffectSpec(spec task.Effect) (Effect, error) {
 			return nil, fmt.Errorf("annotate effect is nil")
 		}
 		return FromTaskAnnotateEffect(*spec.AnnotateEffect()), nil
-	case task.EffectKindDropChildren:
-		if spec.DropChildrenEffect() == nil {
-			return nil, fmt.Errorf("drop children effect is nil")
-		}
-		return NewDropChildrenEffect(), nil
 	default:
 		return nil, fmt.Errorf("unknown effect type: %s", spec.Kind())
 	}
