@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.27.0"
+	mathRand "math/rand"
 	"testing"
 	"time"
 )
@@ -210,7 +211,7 @@ func TestAdapter_Transform(t *testing.T) {
 					},
 					ConditionalDefinition: []*task.ConditionalDefinition{
 						task.NewConditionalDefinition(
-							task.NewProbabilisticCondition(1.0),
+							task.NewProbabilisticCondition(1.0, mathRand.Float64),
 							[]task.Effect{
 								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 							},

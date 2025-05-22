@@ -7,7 +7,6 @@ import (
 	"github.com/k4ji/tracesimulator/pkg/blueprint"
 	"github.com/k4ji/tracesimulator/pkg/model/span"
 	"github.com/k4ji/tracesimulator/pkg/model/task"
-	mathRand "math/rand"
 	"time"
 )
 
@@ -34,7 +33,7 @@ func (s *Simulator[T]) Run(blueprint blueprint.Blueprint, baseEndTime time.Time)
 	externalIDToSpan := make(map[task.ExternalID]*span.TreeNode)
 	for _, taskTree := range traceRootTaskNodes {
 		traceID := generateTraceID()
-		rootSpan, err := span.FromTaskTree(taskTree, traceID, baseEndTime, generateSpanID, mathRand.Float64)
+		rootSpan, err := span.FromTaskTree(taskTree, traceID, baseEndTime, generateSpanID)
 		if err != nil {
 			return zero, fmt.Errorf("failed to construct span tree: %w", err)
 		}

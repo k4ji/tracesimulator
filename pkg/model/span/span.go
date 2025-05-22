@@ -32,9 +32,8 @@ func FromTaskTree(
 	traceID TraceID,
 	baseStartTime time.Time,
 	idGen func() ID,
-	randGen func() float64,
 ) (*TreeNode, error) {
-	rootSpan, err := fromTaskNode(taskTree, traceID, nil, nil, baseStartTime, idGen, randGen)
+	rootSpan, err := fromTaskNode(taskTree, traceID, nil, nil, baseStartTime, idGen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert task tree to span tree: %w", err)
 	}
@@ -51,7 +50,6 @@ func fromTaskNode(
 	parentDuration *time.Duration,
 	baseStartTime time.Time,
 	idGen func() ID,
-	randGen func() float64,
 ) (*TreeNode, error) {
 	spanID := idGen()
 	delay, err := taskNode.Definition().Delay().Resolve(parentDuration)
@@ -102,7 +100,7 @@ func fromTaskNode(
 	}
 
 	for _, childTask := range taskNode.Children() {
-		childSpan, err := fromTaskNode(childTask, traceID, &spanID, duration, startTime, idGen, randGen)
+		childSpan, err := fromTaskNode(childTask, traceID, &spanID, duration, startTime, idGen)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert child task to span: %w", err)
 		}
@@ -114,10 +112,11 @@ func fromTaskNode(
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert condition spec to condition: %w", err)
 		}
-		if condition.Evaluate(EvaluationContext{
-			randomness: randGen,
-			node:       &node,
-		}) {
+		b, err := condition.Evaluate([]*TreeNode{&node})
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate condition: %w", err)
+		}
+		if b {
 			for _, effectSpec := range spec.Effects() {
 				effect, err := FromEffectSpec(effectSpec)
 				if err != nil {

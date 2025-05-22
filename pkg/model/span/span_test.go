@@ -48,7 +48,7 @@ func TestFromTaskTree(t *testing.T) {
 						},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 1.0 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
@@ -60,7 +60,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -142,7 +141,6 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			randGen: func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -546,7 +544,6 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -601,7 +598,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.4 }),
 								[]task.Effect{
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
 										task.NewEvent(
@@ -620,7 +617,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.4 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -658,7 +654,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.6 }),
 								[]task.Effect{
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
 										task.NewEvent(
@@ -677,7 +673,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.6 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -713,7 +708,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.4 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
@@ -726,7 +721,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.4 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -762,7 +756,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromAnnotateEffect(task.NewAnnotateEffect(
 										map[string]string{"key2": "val2"},
@@ -777,7 +771,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -813,7 +806,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromAnnotateEffect(task.NewAnnotateEffect(
 										map[string]string{"key": "value"},
@@ -828,7 +821,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -864,7 +856,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
@@ -884,7 +876,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -908,7 +899,7 @@ func TestFromTaskTree(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen, tc.randGen)
+			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, span)
 		})
@@ -979,7 +970,7 @@ func TestFromTaskTreeError(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) }, func() float64 { return 1.0 })
+			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) })
 			assert.Error(t, err)
 		})
 	}
