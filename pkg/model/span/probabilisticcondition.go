@@ -18,6 +18,6 @@ func NewProbabilistic(threshold float64, randomness func() float64) *Probabilist
 	}
 }
 
-func (p Probabilistic) Evaluate(_ []*TreeNode) (bool, error) {
-	return p.randomness() < p.threshold, nil
+func (p Probabilistic) Evaluate(_ *TreeNode) (*ConditionEvaluationResult, error) {
+	return NewConditionEvaluationResult([]bool{p.randomness() < p.threshold}, false), nil
 }

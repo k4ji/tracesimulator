@@ -8,7 +8,7 @@ import (
 // Condition is an interface for evaluating whether a condition is met.
 type Condition interface {
 	// Evaluate evaluates the condition based on the provided context and returns true if the condition is met.
-	Evaluate(targets []*TreeNode) (bool, error)
+	Evaluate(target *TreeNode) (*ConditionEvaluationResult, error)
 }
 
 // FromConditionSpec converts a Condition spec to a Condition.
@@ -21,6 +21,32 @@ func FromConditionSpec(spec task.Condition) (Condition, error) {
 		return NewProbabilistic(
 			spec.Probabilistic().Threshold(),
 			spec.Probabilistic().Randomness(),
+		), nil
+	case task.ConditionKindHasAttribute:
+		if spec.HasAttribute() == nil {
+			return nil, fmt.Errorf("hasAttribute condition requires a key")
+		}
+		return NewHasAttribute(spec.HasAttribute().Key()), nil
+	case task.ConditionKindChild:
+		if spec.Child() == nil {
+			return nil, fmt.Errorf("child condition requires a child condition")
+		}
+		innerCondition, err := FromConditionSpec(spec.Child().Inner())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert inner condition: %w", err)
+		}
+		return NewChild(innerCondition), nil
+	case task.ConditionKindAtLeast:
+		if spec.AtLeast() == nil {
+			return nil, fmt.Errorf("atLeast condition requires a count")
+		}
+		innerCondition, err := FromConditionSpec(spec.AtLeast().Inner())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert inner condition: %w", err)
+		}
+		return NewAtLeast(
+			spec.AtLeast().Threshold(),
+			innerCondition,
 		), nil
 	default:
 		return nil, fmt.Errorf("unsupported condition type: %s", spec.Kind())

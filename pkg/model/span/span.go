@@ -112,11 +112,15 @@ func fromTaskNode(
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert condition spec to condition: %w", err)
 		}
-		b, err := condition.Evaluate([]*TreeNode{&node})
+		cr, err := condition.Evaluate(&node)
 		if err != nil {
 			return nil, fmt.Errorf("failed to evaluate condition: %w", err)
 		}
-		if b {
+		is, err := cr.IsSatisfied()
+		if err != nil {
+			return nil, fmt.Errorf("failed to check condition satisfaction: %w", err)
+		}
+		if is {
 			for _, effectSpec := range spec.Effects() {
 				effect, err := FromEffectSpec(effectSpec)
 				if err != nil {
