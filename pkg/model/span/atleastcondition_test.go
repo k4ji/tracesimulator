@@ -6,9 +6,7 @@ import (
 )
 
 // MockChildInnerCondition is a mock implementation of the Condition interface, which returns true and false one after the other.
-type AtLeastConditionInnerConditionMock struct {
-	evaluationCount int
-}
+type AtLeastConditionInnerConditionMock struct{}
 
 func (m *AtLeastConditionInnerConditionMock) Evaluate(_ *TreeNode) (*ConditionEvaluationResult, error) {
 	return NewConditionEvaluationResult([]bool{false, true, false}, true), nil
