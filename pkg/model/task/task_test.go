@@ -23,7 +23,7 @@ func makeDefaultDefinition(name string) *Definition {
 			NewConditionalDefinition(
 				Condition{
 					kind:          ConditionKindProbabilistic,
-					probabilistic: &Probabilistic{threshold: 0.0},
+					probabilistic: &ProbabilisticCondition{threshold: 0.0},
 				},
 				make([]Effect, 0),
 			),

@@ -48,7 +48,7 @@ func TestFromTaskTree(t *testing.T) {
 						},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 1.0 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
@@ -60,7 +60,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -142,7 +141,6 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			randGen: func() float64 { return 1.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -546,7 +544,6 @@ func TestFromTaskTree(t *testing.T) {
 					return id
 				}
 			}(),
-			randGen: func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -601,7 +598,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.4 }),
 								[]task.Effect{
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
 										task.NewEvent(
@@ -620,7 +617,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.4 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -658,7 +654,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.6 }),
 								[]task.Effect{
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
 										task.NewEvent(
@@ -677,7 +673,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.6 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -713,7 +708,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(0.5),
+								task.NewProbabilisticCondition(0.5, func() float64 { return 0.4 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 								},
@@ -726,7 +721,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.4 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -762,7 +756,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromAnnotateEffect(task.NewAnnotateEffect(
 										map[string]string{"key2": "val2"},
@@ -777,7 +771,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -813,7 +806,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromAnnotateEffect(task.NewAnnotateEffect(
 										map[string]string{"key": "value"},
@@ -828,7 +821,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -844,6 +836,153 @@ func TestFromTaskTree(t *testing.T) {
 				events:               []Event{},
 				linkedToExternalID:   []*task.ExternalID{},
 				children:             []*TreeNode{},
+			},
+		},
+		{
+			name: "evaluate nested condition",
+			taskTree: func() *task.TreeNode {
+				root := task.NewTreeNode(
+					func() *task.Definition {
+						def, _ := task.NewDefinition(
+							"root-task",
+							true,
+							task.NewResource("service-a", make(map[string]string)),
+							make(map[string]string),
+							task.KindInternal,
+							nil,
+							NewAbsoluteDurationDelay(0),
+							NewAbsoluteDurationDuration(10*time.Second),
+							nil,
+							[]*task.ExternalID{},
+							[]task.Event{},
+							[]*task.ConditionalDefinition{
+								task.NewConditionalDefinition(
+									task.NewAtLeastCondition(
+										1,
+										task.NewChildCondition(task.NewHasAttributeCondition("key1")),
+									),
+									[]task.Effect{
+										task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
+									},
+								),
+							},
+						)
+						return def
+					}(),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task-1",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								map[string]string{"key1": "val1"},
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationDelay(0),
+								NewRelativeDurationDuration(0.5),
+								nil,
+								[]*task.ExternalID{},
+								[]task.Event{},
+								[]*task.ConditionalDefinition{},
+							)
+							return def
+						}(),
+					),
+				)
+				//nolint:errcheck
+				root.AddChild(
+					task.NewTreeNode(
+						func() *task.Definition {
+							def, _ := task.NewDefinition(
+								"child-task-2",
+								false,
+								task.NewResource("service-a", make(map[string]string)),
+								map[string]string{"key2": "val2"},
+								task.KindClient,
+								nil,
+								NewAbsoluteDurationDelay(0),
+								NewRelativeDurationDuration(0.5),
+								nil,
+								[]*task.ExternalID{},
+								[]task.Event{},
+								[]*task.ConditionalDefinition{},
+							)
+							return def
+						}(),
+					),
+				)
+				return root
+			}(),
+			traceID:     traceID,
+			baseEndTime: baseTime,
+			idGen: func() func() ID {
+				ids := [][8]byte{
+					{0x01}, // ID for the root span
+					{0x02}, // ID for the child-1 span
+					{0x03}, // ID for the child-2 span
+				}
+				index := 0
+				return func() ID {
+					id := NewSpanID(ids[index])
+					index++
+					return id
+				}
+			}(),
+			expected: &TreeNode{
+				id:                   NewSpanID([8]byte{0x01}),
+				traceID:              traceID,
+				name:                 "root-task",
+				isResourceEntryPoint: true,
+				kind:                 KindInternal,
+				resource:             task.NewResource("service-a", make(map[string]string)),
+				attributes:           make(map[string]string),
+				startTime:            baseTime,
+				endTime:              baseTime.Add(10 * time.Second),
+				events:               []Event{},
+				status:               StatusError(ptrString("error")),
+				children: []*TreeNode{
+					{
+						id:                   NewSpanID([8]byte{0x02}),
+						traceID:              traceID,
+						name:                 "child-task-1",
+						isResourceEntryPoint: false,
+						kind:                 KindClient,
+						resource:             task.NewResource("service-a", make(map[string]string)),
+						attributes:           map[string]string{"key1": "val1"},
+						startTime:            baseTime.Add(0 * time.Second),
+						endTime:              baseTime.Add(5 * time.Second),
+						status:               StatusOK,
+						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
+						externalID:           nil,
+						linkedTo:             []*TreeNode{},
+						events:               []Event{},
+						linkedToExternalID:   []*task.ExternalID{},
+						children:             []*TreeNode{},
+					},
+					{
+						id:                   NewSpanID([8]byte{0x03}),
+						traceID:              traceID,
+						name:                 "child-task-2",
+						isResourceEntryPoint: false,
+						kind:                 KindClient,
+						resource:             task.NewResource("service-a", make(map[string]string)),
+						attributes:           map[string]string{"key2": "val2"},
+						startTime:            baseTime.Add(0 * time.Second),
+						endTime:              baseTime.Add(5 * time.Second),
+						status:               StatusOK,
+						parentID:             func() *ID { id := NewSpanID([8]byte{0x01}); return &id }(),
+						externalID:           nil,
+						linkedTo:             []*TreeNode{},
+						events:               []Event{},
+						linkedToExternalID:   []*task.ExternalID{},
+						children:             []*TreeNode{},
+					},
+				},
+				linkedTo:           []*TreeNode{},
+				linkedToExternalID: []*task.ExternalID{},
 			},
 		},
 		{
@@ -864,7 +1003,7 @@ func TestFromTaskTree(t *testing.T) {
 						[]task.Event{},
 						[]*task.ConditionalDefinition{
 							task.NewConditionalDefinition(
-								task.NewProbabilisticCondition(1.0),
+								task.NewProbabilisticCondition(1.0, func() float64 { return 0.0 }),
 								[]task.Effect{
 									task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 									task.FromRecordEventEffect(task.NewRecordEventEffect(
@@ -884,7 +1023,6 @@ func TestFromTaskTree(t *testing.T) {
 			traceID:     traceID,
 			baseEndTime: baseTime,
 			idGen:       func() ID { return NewSpanID([8]byte{0x01}) },
-			randGen:     func() float64 { return 0.0 },
 			expected: &TreeNode{
 				id:                   NewSpanID([8]byte{0x01}),
 				traceID:              traceID,
@@ -908,7 +1046,7 @@ func TestFromTaskTree(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen, tc.randGen)
+			span, err := FromTaskTree(tc.taskTree, tc.traceID, tc.baseEndTime, tc.idGen)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, span)
 		})
@@ -979,7 +1117,7 @@ func TestFromTaskTreeError(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) }, func() float64 { return 1.0 })
+			_, err := FromTaskTree(tc.taskTree, tc.traceID, time.Now(), func() ID { return NewSpanID([8]byte{0x01}) })
 			assert.Error(t, err)
 		})
 	}

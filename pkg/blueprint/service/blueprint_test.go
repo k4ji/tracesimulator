@@ -5,6 +5,7 @@ import (
 	"github.com/k4ji/tracesimulator/pkg/model/task"
 	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"github.com/stretchr/testify/assert"
+	mathRand "math/rand"
 	"testing"
 	"time"
 )
@@ -39,7 +40,7 @@ func TestBlueprint_Interpret(t *testing.T) {
 								},
 								ConditionalDefinition: []*task.ConditionalDefinition{
 									task.NewConditionalDefinition(
-										task.NewProbabilisticCondition(0.1),
+										task.NewProbabilisticCondition(0.1, mathRand.Float64),
 										[]task.Effect{
 											task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 										},

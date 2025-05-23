@@ -8,6 +8,7 @@ import (
 	"github.com/k4ji/tracesimulator/pkg/model/task"
 	"github.com/k4ji/tracesimulator/pkg/model/task/taskduration"
 	"github.com/stretchr/testify/assert"
+	mathRand "math/rand"
 	"testing"
 	"time"
 )
@@ -188,7 +189,7 @@ func TestSimulator_Run(t *testing.T) {
 					ChildOf: nil,
 					ConditionalDefinition: []*task.ConditionalDefinition{
 						task.NewConditionalDefinition(
-							task.NewProbabilisticCondition(1.0),
+							task.NewProbabilisticCondition(1.0, mathRand.Float64),
 							[]task.Effect{
 								task.FromMarkAsFailedEffect(task.NewMarkAsFailedEffect(ptrString("error"))),
 							},
