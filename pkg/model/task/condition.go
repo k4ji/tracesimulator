@@ -3,10 +3,11 @@ package task
 type ConditionKind string
 
 const (
-	ConditionKindProbabilistic ConditionKind = "probabilistic"
-	ConditionKindAtLeast       ConditionKind = "atLeast"
-	ConditionKindChild         ConditionKind = "child"
-	ConditionKindHasAttribute  ConditionKind = "hasAttribute"
+	ConditionKindProbabilistic  ConditionKind = "probabilistic"
+	ConditionKindAtLeast        ConditionKind = "atLeast"
+	ConditionKindChild          ConditionKind = "child"
+	ConditionKindHasAttribute   ConditionKind = "hasAttribute"
+	ConditionKindMarkedAsFailed ConditionKind = "markedAsFailed"
 )
 
 // Condition is an interface for evaluating whether an effect should be applied.
@@ -21,6 +22,8 @@ type Condition struct {
 	child *ChildCondition
 	// hasAttribute is the attribute that must be present.
 	hasAttribute *HasAttributeCondition
+	// markedAsFailed is the condition that checks if the task is marked as failed.
+	markedAsFailed *MarkedAsFailedCondition
 }
 
 // NewProbabilisticCondition creates a new Condition with the given probability.
@@ -65,6 +68,14 @@ func NewHasAttributeCondition(key string) Condition {
 	}
 }
 
+// NewMarkedAsFailedCondition creates a new Condition that checks if the task is marked as failed.
+func NewMarkedAsFailedCondition() Condition {
+	return Condition{
+		kind:           ConditionKindMarkedAsFailed,
+		markedAsFailed: &MarkedAsFailedCondition{},
+	}
+}
+
 func (c Condition) Kind() ConditionKind {
 	return c.kind
 }
@@ -83,4 +94,8 @@ func (c Condition) Child() *ChildCondition {
 
 func (c Condition) HasAttribute() *HasAttributeCondition {
 	return c.hasAttribute
+}
+
+func (c Condition) MarkedAsFailed() *MarkedAsFailedCondition {
+	return c.markedAsFailed
 }

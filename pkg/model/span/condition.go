@@ -48,6 +48,11 @@ func FromConditionSpec(spec task.Condition) (Condition, error) {
 			spec.AtLeast().Threshold(),
 			innerCondition,
 		), nil
+	case task.ConditionKindMarkedAsFailed:
+		if spec.MarkedAsFailed() == nil {
+			return nil, fmt.Errorf("markedAsFailed condition requires a message")
+		}
+		return NewMarkedAsFailedCondition(), nil
 	default:
 		return nil, fmt.Errorf("unsupported condition type: %s", spec.Kind())
 	}
