@@ -4,6 +4,22 @@
 
 ---
 
+## ⚠️ DEPRECATION NOTICE
+
+This repository has been **archived** and is no longer actively maintained.
+
+The tracesimulator functionality has been migrated into the
+[`tracesimulationreceiver`](https://github.com/k4ji/tracesimulationreceiver) repository
+under the `internal/tracesimulator` package.
+
+If you're currently using this package (or want to use it), please open an issue in the
+[`tracesimulationreceiver`](https://github.com/k4ji/tracesimulationreceiver/issues) repo
+to discuss your use case.
+
+We’ll consider re-publishing the simulator as a standalone or public package if there is demonstrated demand.
+
+---
+
 ## Overview
 
 **TraceSimulator** is a Go library for simulating traces by providing a high-level **blueprint** of trace structures and their relationships.
